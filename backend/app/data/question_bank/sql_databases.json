@@ -1,0 +1,62 @@
+[
+  {
+    "id": "sql-001",
+    "topic": "SQL & Databases",
+    "difficulty": "beginner",
+    "question_text": "What is the difference between WHERE and HAVING clauses in SQL?",
+    "options": [
+      "WHERE filters groups after aggregation, while HAVING filters individual rows before aggregation",
+      "WHERE filters rows before aggregation, while HAVING filters aggregated groups",
+      "WHERE is only used in subqueries, while HAVING is used in the main SELECT query",
+      "There is no functional difference; they are interchangeable aliases"
+    ],
+    "correct_option_index": 1,
+    "explanation": "WHERE filters rows before any aggregate functions (COUNT, SUM, AVG) are computed. HAVING filters the result set after the GROUP BY aggregation has taken place.",
+    "concept_tested": "SQL Query Execution Order"
+  },
+  {
+    "id": "sql-002",
+    "topic": "SQL & Databases",
+    "difficulty": "intermediate",
+    "question_text": "What are the ACID properties in relational database transactions?",
+    "options": [
+      "Asynchronous, Consistent, Indexed, Durable",
+      "Atomicity, Consistency, Isolation, Durability",
+      "Availability, Consistency, Integrity, Dependency",
+      "Authentication, Concurrency, Isolation, Determinism"
+    ],
+    "correct_option_index": 1,
+    "explanation": "ACID guarantees transactional validity: Atomicity (all or nothing), Consistency (preserves database constraints), Isolation (concurrent transactions don't interfere), Durability (committed data survives crashes).",
+    "concept_tested": "Database Transaction Integrity"
+  },
+  {
+    "id": "sql-003",
+    "topic": "SQL & Databases",
+    "difficulty": "advanced",
+    "question_text": "What is a database index 'Covering Index' (Index-Only Scan)?",
+    "options": [
+      "An index that encrypts table columns on disk",
+      "An index that includes all columns requested by a query, allowing the database to satisfy the query without reading table heap blocks",
+      "An index that automatically balances across read replicas",
+      "An index that locks all incoming write operations until read completes"
+    ],
+    "correct_option_index": 1,
+    "explanation": "A covering index contains all the columns evaluated or returned by a query. Since the database engine retrieves all required fields directly from the index tree, it avoids expensive table heap lookups (random disk I/O).",
+    "concept_tested": "Database Performance & Query Optimization"
+  },
+  {
+    "id": "sql-004",
+    "topic": "SQL & Databases",
+    "difficulty": "beginner",
+    "question_text": "Which SQL constraint prevents duplicate values in a column while allowing at most one NULL in PostgreSQL?",
+    "options": [
+      "FOREIGN KEY",
+      "CHECK",
+      "UNIQUE",
+      "DEFAULT"
+    ],
+    "correct_option_index": 2,
+    "explanation": "A UNIQUE constraint ensures that all values in a column are distinct. In relational systems like PostgreSQL, multiple NULLs are technically distinct according to ANSI standards, but unique values for non-null items are strictly enforced.",
+    "concept_tested": "Database Constraints & Schema Design"
+  }
+]

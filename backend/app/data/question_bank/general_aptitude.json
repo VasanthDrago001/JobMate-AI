@@ -1,0 +1,47 @@
+[
+  {
+    "id": "apt-001",
+    "topic": "General Aptitude",
+    "difficulty": "beginner",
+    "question_text": "A train traveling at 72 km/h crosses a 200-meter platform in 20 seconds. What is the length of the train?",
+    "options": [
+      "150 meters",
+      "200 meters",
+      "250 meters",
+      "300 meters"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Speed = 72 km/h = 72 * (5/18) = 20 m/s. Total distance in 20s = Speed * Time = 20 * 20 = 400 meters. Total distance = Train Length + Platform Length. Train Length = 400 - 200 = 200 meters.",
+    "concept_tested": "Time, Speed, and Distance"
+  },
+  {
+    "id": "apt-002",
+    "topic": "General Aptitude",
+    "difficulty": "intermediate",
+    "question_text": "A can finish a software task in 12 days, and B can finish it in 24 days. Working together, how many days will they take to complete the task?",
+    "options": [
+      "6 days",
+      "8 days",
+      "10 days",
+      "18 days"
+    ],
+    "correct_option_index": 1,
+    "explanation": "A's 1-day work = 1/12. B's 1-day work = 1/24. Combined 1-day work = (1/12) + (1/24) = 3/24 = 1/8. Therefore, together they take 8 days to complete the task.",
+    "concept_tested": "Work and Time"
+  },
+  {
+    "id": "apt-003",
+    "topic": "General Aptitude",
+    "difficulty": "beginner",
+    "question_text": "In a coding sequence, if 'ALGORITHM' is coded as 'BMHPSJUIO' (+1 letter shift), how would 'PYTHON' be coded using the exact same rule?",
+    "options": [
+      "QZUIPO",
+      "QZUIOP",
+      "OYSMGM",
+      "QZVIOP"
+    ],
+    "correct_option_index": 0,
+    "explanation": "Shifting each letter by +1 in the alphabet: P->Q, Y->Z, T->U, H->I, O->P, N->O. The resulting code word is QZUIPO.",
+    "concept_tested": "Logical Reasoning & Pattern Recognition"
+  }
+]

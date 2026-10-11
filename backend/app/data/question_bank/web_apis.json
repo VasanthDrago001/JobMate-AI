@@ -1,0 +1,47 @@
+[
+  {
+    "id": "api-001",
+    "topic": "Web APIs & Backend",
+    "difficulty": "beginner",
+    "question_text": "What makes an HTTP method 'Idempotent' in REST API design?",
+    "options": [
+      "The method cannot accept a JSON request body",
+      "Making multiple identical requests produces the exact same server-side resource state as making a single request",
+      "The method returns responses that are encrypted with SSL",
+      "The request is executed synchronously without waiting for network ACK"
+    ],
+    "correct_option_index": 1,
+    "explanation": "An HTTP method is idempotent if the side effects of N > 0 identical requests with that method is the same as for a single request. GET, PUT, and DELETE are idempotent; POST is typically not idempotent.",
+    "concept_tested": "RESTful Architecture & HTTP Verbs"
+  },
+  {
+    "id": "api-002",
+    "topic": "Web APIs & Backend",
+    "difficulty": "intermediate",
+    "question_text": "In FastAPI, how does asynchronous request handling (async def) improve throughput compared to standard synchronous endpoints?",
+    "options": [
+      "It compiles Python code into C++ machine binaries before starting",
+      "It releases the event loop during I/O operations (like database queries or external HTTP requests), allowing other requests to be serviced concurrently on a single thread",
+      "It disables Python GIL across all system CPU cores",
+      "It bypasses Pydantic schema validation for faster serialization"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Async endpoints run on the asyncio event loop. When awaiting I/O operations, the event loop switches to handle other incoming requests without blocking the thread, greatly increasing throughput for I/O-bound web services.",
+    "concept_tested": "FastAPI Async Architecture"
+  },
+  {
+    "id": "api-003",
+    "topic": "Web APIs & Backend",
+    "difficulty": "intermediate",
+    "question_text": "What is the primary function of Redis in a high-throughput backend architecture?",
+    "options": [
+      "Replacing relational databases as a permanent ACID cold-storage file archive",
+      "Acting as an in-memory key-value data store used for fast caching, session storage, and pub/sub message brokering",
+      "Compiling frontend TypeScript code into browser bundles",
+      "Managing Docker container network routes"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Redis operates in memory with sub-millisecond latency, making it ideal for caching frequently read database queries, managing user sessions, and implementing rate limiters or pub/sub message brokers.",
+    "concept_tested": "Distributed Caching & Backend Architecture"
+  }
+]

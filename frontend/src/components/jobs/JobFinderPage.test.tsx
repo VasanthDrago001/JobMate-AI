@@ -2,62 +2,60 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { JobFinderPage } from './JobFinderPage';
 import { jobService } from '../../services/jobService';
-import type { JobSearchResponse } from '../../types/jobFinder';
+import type { JobSearchResponseUI } from '../../types/jobFinder';
 
-const MOCK_JOBS_RESPONSE: JobSearchResponse = {
+const MOCK_JOBS_RESPONSE: JobSearchResponseUI = {
   results: [
     {
       id: 'razorpay-backend-sde2',
       title: 'Senior Software Engineer - Backend',
       company_name: 'Razorpay',
       location: 'Bengaluru',
-      work_mode: 'hybrid',
+      work_mode: 'Hybrid',
       source: 'greenhouse',
       application_url: 'https://razorpay.com/jobs/sde2',
       salary_display: '₹22,00,000 - ₹34,00,000 / yr',
       description_snippet: 'Build payment infrastructure using Python, FastAPI, and PostgreSQL.',
-      posted_at_iso: '2026-03-15T00:00:00Z',
-      posted_date_display: 'March 15, 2026',
-      last_verified_at_iso: new Date().toISOString(),
+      posting_date: 'March 15, 2026',
+      last_verified_at: new Date().toISOString(),
       match_score_percentage: 85.0,
+      matched_skills_count: 4,
+      total_required_skills_count: 5,
       match_summary_explanation: 'Strong match: 4 of 5 required skills verified in your resume.',
       skills_breakdown: [
         {
           skill_name: 'Python',
           status: 'matched',
           resume_evidence_snippet: 'Built microservices using Python 3.11',
-          importance: 'Must-Have',
+          importance: 'Required',
         },
         {
           skill_name: 'FastAPI',
           status: 'matched',
           resume_evidence_snippet: 'Developed high-throughput REST APIs',
-          importance: 'Must-Have',
+          importance: 'Required',
         },
         {
           skill_name: 'PostgreSQL',
           status: 'matched',
           resume_evidence_snippet: 'Optimized PostgreSQL queries',
-          importance: 'Must-Have',
+          importance: 'Required',
         },
         {
           skill_name: 'Kubernetes',
-          status: 'not_found',
+          status: 'missing',
           resume_evidence_snippet: null,
-          importance: 'Good-to-Have',
+          importance: 'Preferred',
         },
       ],
       is_expired: false,
     },
   ],
   total_matches_found: 1,
-  page: 1,
-  page_size: 15,
-  query_role: 'Senior Backend Engineer',
-  query_location: 'Bengaluru',
+  current_page: 1,
+  has_more: false,
   source_attribution: 'Adzuna Developer API & Official Greenhouse Boards',
   cached: false,
-  verified_at: new Date().toISOString(),
 };
 
 vi.mock('../../services/jobService', () => ({

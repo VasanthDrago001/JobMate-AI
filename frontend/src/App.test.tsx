@@ -268,4 +268,39 @@ describe('JobMate AI Frontend SaaS Interface', () => {
       expect(screen.getByText(/✓ FastAPI/i)).toBeInTheDocument();
     });
   });
+
+  it('navigates to Interview Prep from Header navigation', async () => {
+    render(<App />);
+
+    const prepBtn = screen.getAllByRole('button', { name: /Interview Prep/i })[0];
+    fireEvent.click(prepBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Interview Preparation & Skill Mastery/i)).toBeInTheDocument();
+    });
+  });
+
+  it('transitions from Results page to Interview Prep via CTA button', async () => {
+    render(<App />);
+
+    // Load sample and submit
+    fireEvent.click(screen.getByText(/🧪 Load Sample Profile & JD/i));
+    fireEvent.click(screen.getByTestId('btn-submit-analysis'));
+
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('coverage-score')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    // Click interview prep CTA button
+    const prepCtaBtn = screen.getByRole('button', { name: /Start Interview Prep 🚀/i });
+    fireEvent.click(prepCtaBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Interview Preparation & Skill Mastery/i)).toBeInTheDocument();
+      expect(screen.getByText(/4-Week Preparation Roadmap/i)).toBeInTheDocument();
+    });
+  });
 });

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "py-001",
+    "topic": "Python",
+    "difficulty": "beginner",
+    "question_text": "What is the difference between a list and a tuple in Python?",
+    "options": [
+      "Lists are immutable while tuples are mutable",
+      "Lists are mutable while tuples are immutable",
+      "Lists can only store integers, while tuples can store any type",
+      "Tuples cannot be iterated over in a loop"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Lists in Python are mutable (their elements can be added, removed, or changed in-place), whereas tuples are immutable once created. Both can store heterogeneous types and can be iterated.",
+    "concept_tested": "Python Data Structures & Mutability"
+  },
+  {
+    "id": "py-002",
+    "topic": "Python",
+    "difficulty": "intermediate",
+    "question_text": "How does Python's Global Interpreter Lock (GIL) affect multithreaded programs?",
+    "options": [
+      "It allows true parallel CPU execution across multiple cores for threads",
+      "It ensures only one thread executes Python bytecode at a time, making CPU-bound threads non-parallel",
+      "It blocks asynchronous I/O operations from running concurrently",
+      "It prevents garbage collection from deallocating memory"
+    ],
+    "correct_option_index": 1,
+    "explanation": "The GIL is a mutex that prevents multiple native threads from executing Python bytecodes simultaneously. It benefits single-threaded execution and I/O-bound concurrency, but limits CPU-bound multi-threading unless multiprocessing or native extensions are used.",
+    "concept_tested": "Python Memory & Concurrency"
+  },
+  {
+    "id": "py-003",
+    "topic": "Python",
+    "difficulty": "intermediate",
+    "question_text": "What does the 'yield' keyword do inside a Python function?",
+    "options": [
+      "It immediately terminates the function and raises a StopIteration exception",
+      "It pauses function execution and returns a generator iterator value to the caller",
+      "It creates a daemon thread running in the background",
+      "It imports a module lazily only when requested"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Using 'yield' turns a function into a generator. When invoked, it yields a value, saves its execution state, and resumes right after the yield statement upon the next call to next().",
+    "concept_tested": "Generators & Memory Efficiency"
+  },
+  {
+    "id": "py-004",
+    "topic": "Python",
+    "difficulty": "advanced",
+    "question_text": "What is the primary role of the '__slots__' attribute in a Python class?",
+    "options": [
+      "It restricts inheritance to only approved subclasses",
+      "It prevents the creation of the dynamic '__dict__' instance attribute, saving memory and speeding up attribute access",
+      "It forces all instance methods to execute synchronously in thread pools",
+      "It automatically serializes class instances to JSON"
+    ],
+    "correct_option_index": 1,
+    "explanation": "'__slots__' tells Python not to use a dynamic dictionary for instance attributes, reserving space only for the declared attributes. This significantly reduces memory footprint for millions of small objects.",
+    "concept_tested": "Advanced OOP & Memory Optimization"
+  },
+  {
+    "id": "py-005",
+    "topic": "Python",
+    "difficulty": "beginner",
+    "question_text": "Which built-in Python module is standardly used for writing unit tests?",
+    "options": [
+      "pytest_core",
+      "unittest",
+      "testrunner",
+      "assertlib"
+    ],
+    "correct_option_index": 1,
+    "explanation": "'unittest' is Python's built-in testing framework modeled after Java's JUnit. Third-party tools like 'pytest' build upon or interoperate with standard unittest test cases.",
+    "concept_tested": "Python Testing Fundamentals"
+  }
+]

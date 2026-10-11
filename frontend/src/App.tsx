@@ -8,6 +8,7 @@ import { LoadingProgress } from './components/loading/LoadingProgress';
 import { ResultsPage } from './components/results/ResultsPage';
 import { PrivacyPage } from './components/privacy/PrivacyPage';
 import { JobFinderPage } from './components/jobs/JobFinderPage';
+import { PrepPage } from './components/prep/PrepPage';
 import { EmptyState } from './components/feedback/EmptyState';
 import { ErrorState } from './components/feedback/ErrorState';
 
@@ -60,6 +61,8 @@ export const App: React.FC = () => {
         setCurrentView('results');
       } else if (hash === 'jobs') {
         setCurrentView('jobs');
+      } else if (hash === 'prep') {
+        setCurrentView('prep');
       } else if (hash === '' || hash === 'landing') {
         setCurrentView('landing');
       }
@@ -196,6 +199,7 @@ export const App: React.FC = () => {
                     window.location.hash = '#analyzer';
                   }}
                   onNavigateToJobs={() => handleNavigate('jobs')}
+                  onNavigateToPrep={() => handleNavigate('prep')}
                 />
               ) : (
                 <EmptyState
@@ -213,6 +217,29 @@ export const App: React.FC = () => {
                     : undefined
                 }
                 onNavigateToAnalyzer={() => handleNavigate('analyzer')}
+              />
+            )}
+
+            {currentView === 'prep' && (
+              <PrepPage
+                initialRole={analysisResult?.targetRole || (formData.targetRole ? formData.targetRole : 'Senior Backend / Full-Stack Engineer')}
+                matchedSkills={
+                  analysisResult?.matchedSkills && analysisResult.matchedSkills.length > 0
+                    ? analysisResult.matchedSkills.map((s) => s.name)
+                    : undefined
+                }
+                missingMustHave={
+                  analysisResult?.missingSkills
+                    ? analysisResult.missingSkills.filter((s) => s.importance === 'Must-Have').map((s) => s.name)
+                    : undefined
+                }
+                missingGoodToHave={
+                  analysisResult?.missingSkills
+                    ? analysisResult.missingSkills.filter((s) => s.importance === 'Good-to-Have').map((s) => s.name)
+                    : undefined
+                }
+                onNavigateToAnalyzer={() => handleNavigate('analyzer')}
+                onNavigateToJobs={() => handleNavigate('jobs')}
               />
             )}
 

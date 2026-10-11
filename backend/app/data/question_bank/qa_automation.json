@@ -1,0 +1,47 @@
+[
+  {
+    "id": "qa-001",
+    "topic": "QA Automation",
+    "difficulty": "beginner",
+    "question_text": "What is the primary benefit of the Page Object Model (POM) design pattern in test automation?",
+    "options": [
+      "It automatically runs tests on cloud emulators without code changes",
+      "It separates web page element locators and actions from test scripts, reducing code duplication and maintenance costs",
+      "It completely eliminates the need for explicit or fluent waits",
+      "It encrypts sensitive test credentials in configuration files"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Page Object Model (POM) abstracts web UI pages into dedicated classes. When a UI element or locator changes, engineers only need to update the corresponding Page Object rather than hundreds of individual test cases.",
+    "concept_tested": "Test Automation Design Patterns (POM)"
+  },
+  {
+    "id": "qa-002",
+    "topic": "QA Automation",
+    "difficulty": "intermediate",
+    "question_text": "Why are Explicit Waits preferred over Implicit Waits in Selenium/Playwright frameworks?",
+    "options": [
+      "Explicit waits pause the test thread completely using time.sleep()",
+      "Explicit waits target specific conditions (like element clickable) on individual elements rather than applying a global blind timeout to all find queries",
+      "Explicit waits execute faster because they disable JavaScript rendering in the browser",
+      "Explicit waits bypass cross-origin browser security restrictions"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Explicit waits evaluate specific expected conditions (e.g., elementToBeClickable, visibilityOfElementLocated) with customizable polling intervals, preventing flaky tests without slowing down overall suite execution.",
+    "concept_tested": "Synchronization & Flakiness Prevention"
+  },
+  {
+    "id": "qa-003",
+    "topic": "QA Automation",
+    "difficulty": "advanced",
+    "question_text": "What is the difference between Smoke Testing and Regression Testing?",
+    "options": [
+      "Smoke testing tests all edge cases thoroughly, while regression testing tests only the happy path",
+      "Smoke testing verifies critical core functionality of a new build before deeper testing, while regression testing checks that recent changes haven't broken existing features",
+      "Smoke testing is manual only, whereas regression testing can only be executed by automated bots",
+      "Smoke testing is done in production, while regression testing is done in local developer environments"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Smoke testing (build verification) quickly verifies that major components function so the build is testable. Regression testing validates that recent code additions or bug fixes have not adversely affected existing functional areas.",
+    "concept_tested": "Software Testing Life Cycle (STLC)"
+  }
+]

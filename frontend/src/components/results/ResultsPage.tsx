@@ -10,6 +10,7 @@ interface ResultsPageProps {
   result: AnalysisResult;
   onReanalyze: () => void;
   onNavigateToJobs?: () => void;
+  onNavigateToPrep?: () => void;
 }
 
 type FilterTab = 'all' | 'matched' | 'missing';
@@ -18,6 +19,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
   result,
   onReanalyze,
   onNavigateToJobs,
+  onNavigateToPrep,
 }) => {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedEvidenceSkill, setSelectedEvidenceSkill] =
@@ -73,7 +75,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
               onClick={onNavigateToJobs}
               id="btn-nav-matching-jobs"
             >
-              🎯 Find Matching Jobs ({matchedSkills.length})
+              🎯 Matching Jobs ({matchedSkills.length})
+            </button>
+          )}
+          {onNavigateToPrep && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={onNavigateToPrep}
+              id="btn-nav-prep-roadmap"
+            >
+              💡 Prep Roadmap
             </button>
           )}
           <button
@@ -459,6 +471,41 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
             id="btn-explore-matching-jobs"
           >
             Explore Matching Jobs →
+          </button>
+        </section>
+      )}
+
+      {/* Section 5: Learning & Interview Prep CTA Card */}
+      {onNavigateToPrep && (
+        <section
+          className="glass-card cta-prep-banner no-print"
+          aria-label="Learning and Interview Prep CTA"
+          style={{
+            marginTop: '16px',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.1))',
+            border: '1px solid rgba(99, 102, 241, 0.35)',
+            padding: '28px 32px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '20px',
+          }}
+        >
+          <div className="cta-jobs-content">
+            <h3>💡 Target Your Skill Gaps with a 4-Week Prep Roadmap</h3>
+            <p>
+              We detected {missingSkills.length} missing skill areas. Review a structured 4-week study plan,
+              earn XP in interactive topic quizzes, and master STAR interview storytelling.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={onNavigateToPrep}
+            id="btn-explore-prep-roadmap"
+          >
+            Start Interview Prep 🚀
           </button>
         </section>
       )}

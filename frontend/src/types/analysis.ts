@@ -93,4 +93,4 @@ export interface StageInfo {
   description: string;
 }
 
-export type AppView = 'landing' | 'analyzer' | 'results' | 'jobs' | 'privacy';
+export type AppView = 'landing' | 'analyzer' | 'results' | 'jobs' | 'prep' | 'privacy';
