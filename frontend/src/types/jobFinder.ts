@@ -1,11 +1,13 @@
 export type WorkModeFilter = 'all' | 'remote' | 'hybrid' | 'on-site';
 export type ExperienceLevelFilter = 'all' | 'entry' | 'mid' | 'senior';
+export type SortByOption = 'match' | 'recent' | 'company';
 
 export interface JobFilterParams {
   role: string;
   location: string;
   workMode: WorkModeFilter;
   experienceLevel: ExperienceLevelFilter;
+  sortBy?: SortByOption;
   candidateSkills?: string[];
   page: number;
   pageSize?: number;

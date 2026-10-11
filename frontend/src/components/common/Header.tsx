@@ -7,6 +7,13 @@ interface HeaderProps {
   isBackendConnected: boolean;
 }
 
+/**
+ * Application top navigation header.
+ *
+ * Provides responsive navigation across Overview, Analyzer, Job Finder,
+ * Prep, and Privacy views, along with backend connectivity status
+ * and persistent launch actions with stable layout sizing.
+ */
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigate,
@@ -14,9 +21,27 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  /**
+   * Dispatches navigation request and closes the mobile drawer if open.
+   */
   const handleNavClick = (view: AppView) => {
     onNavigate(view);
     setMobileMenuOpen(false);
+  };
+
+  /**
+   * Handles Primary CTA clicks. Navigates to analyzer or scrolls directly
+   * to the upload form if the user is already on the analyzer view.
+   */
+  const handleLaunchClick = () => {
+    if (currentView === 'analyzer') {
+      const formEl = document.getElementById('analyzer-form');
+      if (formEl && typeof formEl.scrollIntoView === 'function') {
+        formEl.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      handleNavClick('analyzer');
+    }
   };
 
   return (
@@ -107,15 +132,14 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          {currentView !== 'analyzer' && (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm launch-btn"
-              onClick={() => handleNavClick('analyzer')}
-            >
-              Start Analysis →
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn btn-primary btn-sm launch-btn"
+            onClick={handleLaunchClick}
+            aria-label="Launch Resume Analyzer"
+          >
+            Start Analysis →
+          </button>
 
           {/* Mobile hamburger button */}
           <button

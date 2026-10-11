@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 import time
 from datetime import datetime, timezone, timedelta
@@ -178,8 +179,90 @@ class JobFinderService:
 
         return match_score, matched_count, total_count, breakdown, summary
 
+    @staticmethod
+    def _matches_experience_level(item: Dict[str, Any], target_level: str) -> bool:
+        """Determines if a job vacancy matches the specified experience tier.
+
+        - 'entry': 0-2 years, junior, fresher, associate, graduate, intern.
+        - 'mid': 2-5 years, mid-level, standard software engineer.
+        - 'senior': 5+ years, senior, lead, architect, principal, staff.
+        """
+        if not target_level or target_level == "all":
+            return True
+
+        title = item.get("title", "").lower()
+        snippet = item.get("description_snippet", "").lower()
+        combined = f"{title} {snippet}"
+
+        is_senior = bool(
+            any(k in title for k in ["senior", "sr.", "lead", "architect", "principal", "staff", "manager", "head"])
+            or re.search(r"\b([5-9]|1\d)\+?\s*(?:-\s*\d+)?\s*(?:years?|yrs?)\b", combined)
+        )
+
+        is_entry = bool(
+            any(k in title for k in ["entry", "fresher", "junior", "associate", "graduate", "intern", "trainee"])
+            or re.search(r"\b(0\s*-\s*[12]|1\s*-\s*2|under\s*2|[012]\+?)\s*(?:years?|yrs?)\b", combined)
+        )
+
+        is_mid = bool(
+            re.search(r"\b([2-5]\s*-\s*[45]|2\+|3\+|4\+)\s*(?:years?|yrs?)\b", combined)
+            or (not is_senior and not is_entry)
+        )
+
+        if target_level == "senior":
+            return is_senior
+        elif target_level == "entry":
+            return is_entry and not is_senior
+        elif target_level == "mid":
+            return is_mid and not (is_senior and any(k in title for k in ["lead", "principal", "architect"]))
+
+        return True
+
+    @staticmethod
+    def _matches_work_mode(item: Dict[str, Any], target_mode: str) -> bool:
+        """Checks if a job listing matches requested work arrangement (all, remote, hybrid, on-site)."""
+        if not target_mode or target_mode == "all":
+            return True
+
+        work_mode = item.get("work_mode", "").strip().lower()
+        title_snippet = f"{item.get('title', '')} {item.get('description_snippet', '')}".lower()
+
+        if target_mode == "remote":
+            return work_mode == "remote" or "remote" in title_snippet or "work from home" in title_snippet
+        elif target_mode == "hybrid":
+            return work_mode == "hybrid" or "hybrid" in title_snippet
+        elif target_mode == "on-site":
+            return work_mode == "on-site" or (work_mode != "remote" and "remote" not in title_snippet)
+
+        return True
+
+    @staticmethod
+    def _matches_location(item: Dict[str, Any], target_location: str, target_work_mode: str) -> bool:
+        """Evaluates whether job listing is in the target tech hub location or compatible Remote arrangement."""
+        clean_loc = target_location.strip().lower()
+        if not clean_loc or clean_loc in ("all", "all india", "any", "india"):
+            return True
+
+        item_loc = item.get("location", "").lower()
+        is_remote_job = item.get("work_mode", "").lower() == "remote" or "remote" in item_loc
+
+        # If user explicitly searched "Remote", only accept remote jobs
+        if clean_loc == "remote":
+            return is_remote_job
+
+        # City match token check
+        city_tokens = [t for t in re.split(r"[/, ]+", clean_loc) if len(t) >= 3 and t not in ["delhi", "ncr"]]
+        has_city_match = any(t in item_loc for t in city_tokens) or clean_loc in item_loc
+
+        # On-site or hybrid must physically match the city
+        if target_work_mode in ("on-site", "hybrid"):
+            return has_city_match
+
+        # Otherwise, jobs located in that city or remote jobs are compatible
+        return has_city_match or is_remote_job
+
     async def search_jobs(self, query: JobSearchFilter) -> JobSearchResponse:
-        """Search legitimate job sources, evaluate candidate skill fit, and return ranked results."""
+        """Search legitimate job sources, filter by criteria, evaluate candidate skill fit, and return sorted results."""
         raw_items, is_cached = await self._fetch_raw_listings(query)
 
         # Filter out expired listings (e.g. posted > 60 days ago if date available)
@@ -190,6 +273,19 @@ class JobFinderService:
             p_date = item.get("posting_date")
             if p_date and p_date < cutoff_date:
                 continue
+
+            # Strict work mode filtering across all providers
+            if not self._matches_work_mode(item, query.work_mode):
+                continue
+
+            # Strict experience tier filtering across all providers
+            if not self._matches_experience_level(item, query.experience_level):
+                continue
+
+            # Strict location matching
+            if not self._matches_location(item, query.location, query.work_mode):
+                continue
+
             active_items.append(item)
 
         # Evaluate skill alignment for each active listing
@@ -224,8 +320,17 @@ class JobFinderService:
                 )
             )
 
-        # Rank by match score percentage descending (highest alignment first)
-        evaluated_listings.sort(key=lambda j: j.match_score_percentage, reverse=True)
+        # Sort based on query.sort_by
+        if query.sort_by == "recent":
+            evaluated_listings.sort(
+                key=lambda j: j.posting_date.timestamp() if j.posting_date else 0,
+                reverse=True,
+            )
+        elif query.sort_by == "company":
+            evaluated_listings.sort(key=lambda j: j.company_name.lower())
+        else:
+            # Default: highest skill match percentage first
+            evaluated_listings.sort(key=lambda j: j.match_score_percentage, reverse=True)
 
         # Pagination slice
         total_found = len(evaluated_listings)

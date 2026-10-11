@@ -1,5 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import type { JobFilterParams, JobListingUI, WorkModeFilter, ExperienceLevelFilter } from '../../types/jobFinder';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type {
+  JobFilterParams,
+  JobListingUI,
+  WorkModeFilter,
+  ExperienceLevelFilter,
+  SortByOption,
+} from '../../types/jobFinder';
 import { jobService } from '../../services/jobService';
 
 interface JobFinderPageProps {
@@ -21,17 +27,30 @@ const DEFAULT_LOCATIONS = [
   'All India',
 ];
 
+/**
+ * Skill-to-Company Indian IT Job Finder Component.
+ *
+ * Discovers active vacancies across authorized providers (Adzuna & Greenhouse),
+ * evaluates resume skill alignment, provides real-time multi-filter queries
+ * (role, location, work arrangement, experience tier, sorting, pagination),
+ * and prevents race conditions from out-of-order network responses.
+ */
 export const JobFinderPage: React.FC<JobFinderPageProps> = ({
   initialRole = 'Senior Backend / Full-Stack Engineer',
   candidateSkills = ['Python', 'FastAPI', 'Docker', 'PostgreSQL', 'Redis', 'Microservices'],
   onNavigateToAnalyzer,
 }) => {
+  // Filter States
   const [roleInput, setRoleInput] = useState<string>(initialRole);
   const [selectedLocation, setSelectedLocation] = useState<string>('Bengaluru');
   const [workMode, setWorkMode] = useState<WorkModeFilter>('all');
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevelFilter>('all');
-  const [locations, setLocations] = useState<string[]>(DEFAULT_LOCATIONS);
+  const [sortBy, setSortBy] = useState<SortByOption>('match');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 6;
 
+  // Options & Data States
+  const [locations, setLocations] = useState<string[]>(DEFAULT_LOCATIONS);
   const [jobs, setJobs] = useState<JobListingUI[]>([]);
   const [totalFound, setTotalFound] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -40,7 +59,13 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
     'Job listings powered by Adzuna Developer API and verified official employer career boards.'
   );
 
-  // Fetch supported locations on mount
+  // Request sequence tracker to discard stale out-of-order responses
+  const requestIdRef = useRef<number>(0);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Fetches supported Indian IT tech hub locations on mount.
+   */
   useEffect(() => {
     jobService
       .getLocations()
@@ -50,44 +75,181 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
         }
       })
       .catch(() => {
-        // Keep defaults
+        // Fall back gracefully to DEFAULT_LOCATIONS
       });
   }, []);
 
-  // Execute search
-  const handleSearch = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  /**
+   * Executes job search against backend with the active filter state.
+   *
+   * Accepts optional parameter overrides to enable immediate searches before
+   * asynchronous React state changes flush.
+   */
+  const executeSearch = useCallback(
+    async (overrides?: Partial<JobFilterParams>) => {
+      const thisRequestId = ++requestIdRef.current;
+      setIsLoading(true);
+      setError(null);
 
-    const filter: JobFilterParams = {
-      role: roleInput.trim() || 'Software Engineer',
-      location: selectedLocation,
-      workMode,
-      experienceLevel,
-      page: 1,
-      pageSize: 15,
-    };
+      const targetRole = overrides?.role !== undefined ? overrides.role : roleInput;
+      const targetLocation = overrides?.location !== undefined ? overrides.location : selectedLocation;
+      const targetWorkMode = overrides?.workMode !== undefined ? overrides.workMode : workMode;
+      const targetExp = overrides?.experienceLevel !== undefined ? overrides.experienceLevel : experienceLevel;
+      const targetSort = overrides?.sortBy !== undefined ? overrides.sortBy : sortBy;
+      const targetPage = overrides?.page !== undefined ? overrides.page : currentPage;
 
-    try {
-      const response = await jobService.searchJobs(filter, candidateSkills);
-      setJobs(response.results);
-      setTotalFound(response.total_matches_found);
-      if (response.source_attribution) {
-        setAttribution(response.source_attribution);
+      const filter: JobFilterParams = {
+        role: targetRole.trim() || 'Software Engineer',
+        location: targetLocation,
+        workMode: targetWorkMode,
+        experienceLevel: targetExp,
+        sortBy: targetSort,
+        page: targetPage,
+        pageSize,
+      };
+
+      try {
+        const response = await jobService.searchJobs(filter, candidateSkills);
+
+        // Discard response if a newer request was dispatched while this was pending
+        if (thisRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setJobs(response.results);
+        setTotalFound(response.total_matches_found);
+        if (response.source_attribution) {
+          setAttribution(response.source_attribution);
+        }
+      } catch (err) {
+        if (thisRequestId !== requestIdRef.current) {
+          return;
+        }
+        const msg = err instanceof Error ? err.message : 'Failed to retrieve job vacancies.';
+        setError(msg);
+      } finally {
+        if (thisRequestId === requestIdRef.current) {
+          setIsLoading(false);
+        }
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to retrieve job vacancies.';
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [roleInput, selectedLocation, workMode, experienceLevel, candidateSkills]);
+    },
+    [roleInput, selectedLocation, workMode, experienceLevel, sortBy, currentPage, candidateSkills]
+  );
 
-  // Run initial search on mount
+  /**
+   * Executes initial search on mount.
+   */
   useEffect(() => {
-    handleSearch();
+    executeSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Handles role keyword input changes with a 400ms debounce to prevent API spam.
+   */
+  const handleRoleInputChange = (newRole: string) => {
+    setRoleInput(newRole);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      executeSearch({ role: newRole, page: 1 });
+    }, 450);
+  };
+
+  /**
+   * Handles user selecting a tech hub location.
+   */
+  const handleLocationChange = (newLocation: string) => {
+    setSelectedLocation(newLocation);
+    setCurrentPage(1);
+    executeSearch({ location: newLocation, page: 1 });
+  };
+
+  /**
+   * Handles user selecting an experience tier.
+   */
+  const handleExperienceChange = (newExp: ExperienceLevelFilter) => {
+    setExperienceLevel(newExp);
+    setCurrentPage(1);
+    executeSearch({ experienceLevel: newExp, page: 1 });
+  };
+
+  /**
+   * Handles user toggling work arrangement mode.
+   */
+  const handleWorkModeChange = (newMode: WorkModeFilter) => {
+    setWorkMode(newMode);
+    setCurrentPage(1);
+    executeSearch({ workMode: newMode, page: 1 });
+  };
+
+  /**
+   * Handles user changing the result sorting criteria.
+   */
+  const handleSortChange = (newSort: SortByOption) => {
+    setSortBy(newSort);
+    setCurrentPage(1);
+    executeSearch({ sortBy: newSort, page: 1 });
+  };
+
+  /**
+   * Handles pagination page change.
+   */
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    executeSearch({ page: newPage });
+    // Smooth scroll back to results toolbar (defensive check for test environments)
+    const toolbarEl = document.getElementById('finder-filter-card-section');
+    if (toolbarEl && typeof toolbarEl.scrollIntoView === 'function') {
+      toolbarEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  /**
+   * Resets all search filters to default values and immediately triggers search.
+   */
+  const handleResetFilters = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    const defaultRole = initialRole;
+    const defaultLocation = 'All India';
+    const defaultWorkMode: WorkModeFilter = 'all';
+    const defaultExp: ExperienceLevelFilter = 'all';
+    const defaultSort: SortByOption = 'match';
+    const defaultPage = 1;
+
+    setRoleInput(defaultRole);
+    setSelectedLocation(defaultLocation);
+    setWorkMode(defaultWorkMode);
+    setExperienceLevel(defaultExp);
+    setSortBy(defaultSort);
+    setCurrentPage(defaultPage);
+
+    executeSearch({
+      role: defaultRole,
+      location: defaultLocation,
+      workMode: defaultWorkMode,
+      experienceLevel: defaultExp,
+      sortBy: defaultSort,
+      page: defaultPage,
+    });
+  };
+
+  /**
+   * Handles manual search button trigger.
+   */
+  const handleManualSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    setCurrentPage(1);
+    executeSearch({ page: 1 });
+  };
+
+  const totalPages = Math.max(1, Math.ceil(totalFound / pageSize));
 
   return (
     <div className="job-finder-page container" id="job-finder-content">
@@ -121,7 +283,11 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
       </div>
 
       {/* Filter Toolbar Card */}
-      <section className="glass-card finder-filter-card" aria-label="Job Search Filters">
+      <section
+        id="finder-filter-card-section"
+        className="glass-card finder-filter-card"
+        aria-label="Job Search Filters"
+      >
         <div className="filter-grid">
           {/* Target Role Field */}
           <div className="filter-field">
@@ -133,7 +299,13 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
               type="text"
               className="filter-input"
               value={roleInput}
-              onChange={(e) => setRoleInput(e.target.value)}
+              onChange={(e) => handleRoleInputChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleManualSearch();
+                }
+              }}
               placeholder="e.g. Python Developer, QA Automation"
             />
           </div>
@@ -147,7 +319,7 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
               id="finder-location-select"
               className="filter-select"
               value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
+              onChange={(e) => handleLocationChange(e.target.value)}
             >
               {locations.map((loc) => (
                 <option key={loc} value={loc}>
@@ -166,7 +338,7 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
               id="finder-exp-select"
               className="filter-select"
               value={experienceLevel}
-              onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevelFilter)}
+              onChange={(e) => handleExperienceChange(e.target.value as ExperienceLevelFilter)}
             >
               <option value="all">Any Experience</option>
               <option value="entry">Entry Level (0-2 yrs)</option>
@@ -184,7 +356,7 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
                   key={mode}
                   type="button"
                   className={`pill-toggle-btn ${workMode === mode ? 'active' : ''}`}
-                  onClick={() => setWorkMode(mode)}
+                  onClick={() => handleWorkModeChange(mode)}
                 >
                   {mode === 'all'
                     ? 'All'
@@ -198,29 +370,57 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
             </div>
           </div>
 
-          {/* Search Trigger Button */}
+          {/* Search & Reset Buttons */}
           <div className="filter-field filter-action">
             <button
               id="btn-search-jobs"
               type="button"
               className="btn btn-primary w-full"
-              onClick={handleSearch}
+              onClick={handleManualSearch}
               disabled={isLoading}
             >
-              {isLoading ? 'Searching Vacancies...' : 'Find Aligned Jobs 🔍'}
+              {isLoading ? 'Searching...' : 'Find Aligned Jobs 🔍'}
+            </button>
+            <button
+              id="btn-reset-filters"
+              type="button"
+              className="btn btn-secondary btn-sm w-full reset-filters-btn"
+              onClick={handleResetFilters}
+              disabled={isLoading}
+            >
+              Reset Filters
             </button>
           </div>
         </div>
       </section>
 
-      {/* Results Header */}
+      {/* Results Header with Sorting */}
       <div className="finder-results-bar">
         <div className="results-count-text">
           Showing <strong>{jobs.length}</strong> of <strong>{totalFound}</strong> verified job postings
           for <em>&ldquo;{roleInput}&rdquo;</em> in <em>{selectedLocation}</em>
         </div>
-        <div className="ranking-indicator-pill">
-          ⚡ Ranked by resume skill alignment
+
+        <div className="finder-sort-and-rank">
+          <div className="finder-sort-control">
+            <label htmlFor="finder-sort-select" className="sort-label">
+              Sort by:
+            </label>
+            <select
+              id="finder-sort-select"
+              className="filter-select sort-select"
+              value={sortBy}
+              onChange={(e) => handleSortChange(e.target.value as SortByOption)}
+            >
+              <option value="match">⚡ Highest Skill Match</option>
+              <option value="recent">📅 Most Recent</option>
+              <option value="company">🏢 Company Name (A-Z)</option>
+            </select>
+          </div>
+
+          <div className="ranking-indicator-pill">
+            ⚡ Ranked by resume skill alignment
+          </div>
         </div>
       </div>
 
@@ -230,7 +430,7 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
           <span className="alert-icon">⚠️</span>
           <div>
             <strong>Unable to load jobs:</strong> {error}
-            <button type="button" className="retry-link-btn" onClick={handleSearch}>
+            <button type="button" className="retry-link-btn" onClick={() => executeSearch()}>
               Try Again
             </button>
           </div>
@@ -263,12 +463,9 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => {
-              setSelectedLocation('All India');
-              setWorkMode('all');
-            }}
+            onClick={handleResetFilters}
           >
-            Reset Location to All India
+            Reset All Filters
           </button>
         </div>
       ) : (
@@ -374,6 +571,33 @@ export const JobFinderPage: React.FC<JobFinderPageProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!isLoading && totalFound > pageSize && (
+        <div className="finder-pagination-bar glass-card">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1 || isLoading}
+            id="btn-prev-page"
+          >
+            ← Previous
+          </button>
+          <span className="pagination-info">
+            Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({totalFound} jobs)
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages || isLoading}
+            id="btn-next-page"
+          >
+            Next →
+          </button>
         </div>
       )}
 

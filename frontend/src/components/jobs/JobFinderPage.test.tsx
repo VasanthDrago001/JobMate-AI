@@ -131,13 +131,9 @@ describe('JobFinderPage Component', () => {
       expect(screen.getByText('Senior Software Engineer - Backend')).toBeInTheDocument();
     });
 
-    // Select Remote work mode
+    // Select Remote work mode (triggers search immediately)
     const remoteBtn = screen.getByRole('button', { name: /^Remote$/i });
     fireEvent.click(remoteBtn);
-
-    // Click search button
-    const searchBtn = screen.getByRole('button', { name: /Find Aligned Jobs 🔍/i });
-    fireEvent.click(searchBtn);
 
     await waitFor(() => {
       expect(jobService.searchJobs).toHaveBeenCalledWith(
@@ -167,4 +163,101 @@ describe('JobFinderPage Component', () => {
       expect(screen.getByText(/No matching job vacancies found/i)).toBeInTheDocument();
     });
   });
+
+  it('allows sorting and experience filtering with auto-search', async () => {
+    render(
+      <JobFinderPage
+        initialRole="Backend Engineer"
+        candidateSkills={['Python']}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Senior Software Engineer - Backend')).toBeInTheDocument();
+    });
+
+    // Change experience level dropdown
+    const expSelect = screen.getByLabelText(/Experience Level/i);
+    fireEvent.change(expSelect, { target: { value: 'senior' } });
+
+    await waitFor(() => {
+      expect(jobService.searchJobs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          experienceLevel: 'senior',
+        }),
+        ['Python']
+      );
+    });
+
+    // Change sort dropdown
+    const sortSelect = screen.getByLabelText(/Sort by:/i);
+    fireEvent.change(sortSelect, { target: { value: 'company' } });
+
+    await waitFor(() => {
+      expect(jobService.searchJobs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sortBy: 'company',
+        }),
+        ['Python']
+      );
+    });
+  });
+
+  it('resets filters and searches immediately when reset button is clicked', async () => {
+    render(
+      <JobFinderPage
+        initialRole="Software Engineer"
+        candidateSkills={['Python']}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Senior Software Engineer - Backend')).toBeInTheDocument();
+    });
+
+    // Click reset button
+    const resetBtn = screen.getByRole('button', { name: /Reset Filters/i });
+    fireEvent.click(resetBtn);
+
+    await waitFor(() => {
+      expect(jobService.searchJobs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          location: 'All India',
+          workMode: 'all',
+          experienceLevel: 'all',
+          sortBy: 'match',
+          page: 1,
+        }),
+        ['Python']
+      );
+    });
+  });
+
+  it('supports pagination controls when total results exceed page size', async () => {
+    vi.mocked(jobService.searchJobs).mockResolvedValue({
+      ...MOCK_JOBS_RESPONSE,
+      total_matches_found: 18,
+    });
+
+    render(
+      <JobFinderPage
+        initialRole="Backend Engineer"
+        candidateSkills={['Python']}
+      />
+    );
+
+    const nextBtn = await screen.findByRole('button', { name: /Next →/i });
+    expect(nextBtn).toBeInTheDocument();
+    fireEvent.click(nextBtn);
+
+    await waitFor(() => {
+      expect(jobService.searchJobs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 2,
+        }),
+        ['Python']
+      );
+    });
+  });
 });
+

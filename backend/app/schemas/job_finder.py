@@ -30,6 +30,10 @@ class JobSearchFilter(BaseModel):
         max_length=30,
         description="List of verified technical skills from the candidate's resume analysis",
     )
+    sort_by: Literal["match", "recent", "company"] = Field(
+        "match",
+        description="Sorting criteria for results: match score, posting recency, or company name",
+    )
     page: int = Field(1, ge=1, le=50, description="Results pagination page number")
     page_size: int = Field(10, ge=1, le=25, description="Number of results per page")
 

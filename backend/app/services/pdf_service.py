@@ -1,7 +1,7 @@
+import io
 import logging
 import os
 import re
-import tempfile
 import time
 from typing import Any, Dict, List
 
@@ -78,8 +78,6 @@ def detect_sections(text: str) -> List[str]:
             detected.append(section_name)
     return detected
 
-
-import io
 
 def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
     """Parse resume PDF with layout awareness, security validations, and ephemeral in-memory processing.

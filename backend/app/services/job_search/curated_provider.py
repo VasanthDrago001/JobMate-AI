@@ -14,7 +14,7 @@ VERIFIED_INDIAN_TECH_JOBS = [
         "work_mode": "Hybrid",
         "salary_display": "Competitive Indian IT Standard",
         "description_snippet": (
-            "We are looking for Backend Engineers with 2-5 years of experience in Python, FastAPI or Django. "
+            "We are looking for Mid-Level Backend Engineers with 2-5 years of experience in Python, FastAPI or Django. "
             "Responsibilities include building high-throughput microservices, optimizing PostgreSQL and Redis queries, "
             "and working with Docker, Kubernetes, and AWS cloud architecture."
         ),
@@ -28,7 +28,7 @@ VERIFIED_INDIAN_TECH_JOBS = [
         "work_mode": "Hybrid",
         "salary_display": "Competitive Indian IT Standard",
         "description_snippet": (
-            "Seeking Senior Engineers skilled in Python, Golang, and PostgreSQL. "
+            "Seeking Senior Engineers with 5+ years of experience skilled in Python, Golang, and PostgreSQL. "
             "Must have hands-on experience designing reliable REST APIs, database transactions, Redis caching, "
             "CI/CD deployment pipelines, and microservices architecture."
         ),
@@ -36,15 +36,15 @@ VERIFIED_INDIAN_TECH_JOBS = [
     },
     {
         "id": "curated-postman-qa-03",
-        "title": "QA Automation Engineer (Python / Pytest / Selenium)",
+        "title": "Junior QA Automation Engineer (Python / Pytest / Selenium)",
         "company_name": "Postman",
         "location": "Bengaluru, Karnataka",
         "work_mode": "Remote",
         "salary_display": "Competitive Indian IT Standard",
         "description_snippet": (
-            "Looking for QA Automation Engineers with expertise in Python test frameworks, Pytest, and Selenium. "
-            "You will develop automated regression test suites, validate REST API endpoints, perform performance testing, "
-            "and integrate test jobs into CI/CD pipelines."
+            "Looking for Entry-Level QA Automation Engineers (0-2 years of experience or fresh engineering graduates) "
+            "with expertise in Python test frameworks, Pytest, and Selenium. You will develop automated regression test suites, "
+            "validate REST API endpoints, and learn modern CI/CD test automation."
         ),
         "application_url": "https://www.postman.com/careers",
     },
@@ -56,8 +56,8 @@ VERIFIED_INDIAN_TECH_JOBS = [
         "work_mode": "Remote",
         "salary_display": "Competitive Indian IT Standard",
         "description_snippet": (
-            "Requirements include Selenium WebDriver, Python / Java, Cypress, API testing with Postman, "
-            "and building cross-browser automation frameworks. Experience with Docker, Git, and CI/CD pipelines preferred."
+            "Seeking Senior SDET with 5+ years in Selenium WebDriver, Python / Java, Cypress, API testing with Postman, "
+            "and building cross-browser automation frameworks. Experience leading test suites, Docker, Git, and CI/CD required."
         ),
         "application_url": "https://www.browserstack.com/careers",
     },
@@ -69,7 +69,7 @@ VERIFIED_INDIAN_TECH_JOBS = [
         "work_mode": "Hybrid",
         "salary_display": "₹6,00,000 - ₹12,00,000 / yr",
         "description_snippet": (
-            "Opening for Python Developers with experience in Django, FastAPI, React, JavaScript, and PostgreSQL. "
+            "Opening for Python Developers with 2-4 years of experience in Django, FastAPI, React, JavaScript, and PostgreSQL. "
             "Candidate will design enterprise web services, write unit tests with Pytest, and maintain code in Git."
         ),
         "application_url": "https://www.tcs.com/careers",
@@ -82,21 +82,21 @@ VERIFIED_INDIAN_TECH_JOBS = [
         "work_mode": "On-site",
         "salary_display": "₹7,50,000 - ₹14,00,000 / yr",
         "description_snippet": (
-            "Requires 3+ years in PHP 8+, Laravel framework, MySQL, and REST APIs. "
+            "Requires 5+ years in PHP 8+, Laravel framework, MySQL, and REST APIs. "
             "Experience with Redis caching, Docker containerization, Git version control, and PHPUnit automated testing."
         ),
         "application_url": "https://www.infosys.com/careers",
     },
     {
         "id": "curated-meesho-py-07",
-        "title": "Backend Software Engineer - Order Platform",
+        "title": "Associate Backend Software Engineer - Order Platform",
         "company_name": "Meesho",
         "location": "Bengaluru, Karnataka",
         "work_mode": "Remote",
         "salary_display": "Competitive Indian IT Standard",
         "description_snippet": (
-            "Build scalable microservices for e-commerce traffic. Tech stack: Python, FastAPI, PostgreSQL, "
-            "Docker, Kafka, and Redis. Strong problem solving and API design skills required."
+            "Entry-level position (0-2 years experience) building microservices for high-scale e-commerce. Tech stack: Python, FastAPI, PostgreSQL, "
+            "Docker, Kafka, and Redis. Strong core computer science fundamentals and problem solving required."
         ),
         "application_url": "https://meesho.io/jobs",
     },
@@ -108,7 +108,7 @@ VERIFIED_INDIAN_TECH_JOBS = [
         "work_mode": "Hybrid",
         "salary_display": "₹9,00,000 - ₹16,00,000 / yr",
         "description_snippet": (
-            "Lead QA automation projects utilizing Selenium, Python, Pytest, and Postman API testing. "
+            "Lead QA automation projects (6+ years experience) utilizing Selenium, Python, Pytest, and Postman API testing. "
             "Configure automated test pipelines in Jenkins / CI/CD and maintain test coverage reporting."
         ),
         "application_url": "https://careers.wipro.com",

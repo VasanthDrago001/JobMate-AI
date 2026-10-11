@@ -130,3 +130,82 @@ def test_job_search_rate_limiting(client: TestClient):
     blocked = client.post("/api/v1/jobs/search", json=payload)
     assert blocked.status_code == 429
     assert "Too many requests" in blocked.json()["detail"]
+
+
+def test_job_search_filter_experience_tiers(client: TestClient):
+    """Verify filtering by experience level (entry vs senior) returns distinct role tiers."""
+    # Senior filter
+    senior_payload = {
+        "role": "Software Engineer",
+        "location": "All India",
+        "work_mode": "all",
+        "experience_level": "senior",
+        "candidate_skills": ["Python", "PostgreSQL"],
+        "page": 1,
+        "page_size": 10,
+    }
+    resp_senior = client.post("/api/v1/jobs/search", json=senior_payload)
+    assert resp_senior.status_code == 200
+    senior_jobs = resp_senior.json()["results"]
+    assert len(senior_jobs) > 0
+    for j in senior_jobs:
+        title_desc = f"{j['title']} {j['description_snippet']}".lower()
+        # Must match senior indicators
+        assert any(k in title_desc for k in ["senior", "lead", "architect", "5+", "6+", "sdet"])
+
+    # Entry filter
+    entry_payload = {
+        "role": "Software Engineer",
+        "location": "All India",
+        "work_mode": "all",
+        "experience_level": "entry",
+        "candidate_skills": ["Python"],
+        "page": 1,
+        "page_size": 10,
+    }
+    resp_entry = client.post("/api/v1/jobs/search", json=entry_payload)
+    assert resp_entry.status_code == 200
+    entry_jobs = resp_entry.json()["results"]
+    assert len(entry_jobs) > 0
+    for j in entry_jobs:
+        title_desc = f"{j['title']} {j['description_snippet']}".lower()
+        assert any(k in title_desc for k in ["entry", "junior", "associate", "0-2", "fresh"])
+
+
+def test_job_search_filter_work_modes(client: TestClient):
+    """Verify filtering by work mode returns only matching work arrangement listings."""
+    remote_payload = {
+        "role": "Engineer",
+        "location": "All India",
+        "work_mode": "remote",
+        "experience_level": "all",
+        "candidate_skills": ["Python"],
+        "page": 1,
+        "page_size": 10,
+    }
+    resp = client.post("/api/v1/jobs/search", json=remote_payload)
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    assert len(results) > 0
+    for j in results:
+        assert j["work_mode"] == "Remote" or "remote" in j["location"].lower()
+
+
+def test_job_search_sorting_options(client: TestClient):
+    """Verify sorting results by company name alphabetically."""
+    company_payload = {
+        "role": "Engineer",
+        "location": "All India",
+        "work_mode": "all",
+        "experience_level": "all",
+        "sort_by": "company",
+        "candidate_skills": ["Python"],
+        "page": 1,
+        "page_size": 10,
+    }
+    resp = client.post("/api/v1/jobs/search", json=company_payload)
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    companies = [j["company_name"].lower() for j in results]
+    assert companies == sorted(companies)
+
