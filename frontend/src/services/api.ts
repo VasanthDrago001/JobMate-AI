@@ -1,5 +1,5 @@
-import type { HealthStatus } from '../types/api';
 import type {
+  HealthStatus,
   BackendAnalysisResponse,
   BackendBulletImprovementRequest,
   BackendBulletImprovementResponse,

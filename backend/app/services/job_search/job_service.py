@@ -12,9 +12,11 @@ from app.schemas.job_finder import (
     JobSearchResponse,
     SkillMatchEvidence,
 )
-from app.services.job_search.adzuna_adapter import AdzunaJobAdapter
-from app.services.job_search.curated_provider import CuratedIndianTechJobProvider
-from app.services.job_search.greenhouse_adapter import GreenhouseJobAdapter
+from app.services.job_search.providers import (
+    AdzunaJobAdapter,
+    CuratedIndianTechJobProvider,
+    GreenhouseJobAdapter,
+)
 from app.services.matching_service import matching_engine
 
 logger = logging.getLogger("jobmate.job_service")

@@ -9,8 +9,7 @@ import { ResultsPage } from './components/results/ResultsPage';
 import { PrivacyPage } from './components/privacy/PrivacyPage';
 import { JobFinderPage } from './components/jobs/JobFinderPage';
 import { PrepPage } from './components/prep/PrepPage';
-import { EmptyState } from './components/feedback/EmptyState';
-import { ErrorState } from './components/feedback/ErrorState';
+import { EmptyState, ErrorState } from './components/feedback/FeedbackStates';
 
 import { api } from './services/api';
 import { runResumeAnalysis } from './services/analysisService';
