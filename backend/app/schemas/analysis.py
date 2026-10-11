@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -29,26 +29,97 @@ class JobDescriptionMetadata(BaseModel):
     word_count: int = Field(..., ge=0, description="Word count of the job description")
 
 
-class PlaceholderAnalysis(BaseModel):
-    """Placeholder analysis result for Stage 1 parser validation."""
+class EvaluatedSkill(BaseModel):
+    """Evaluation details for a single job requirement skill."""
 
-    phase: str = Field(
-        "Phase 1 - Ingestion & Parser Core",
-        description="Current engineering delivery phase",
+    skill_id: str = Field(..., description="Internal skill identifier")
+    name: str = Field(..., description="Canonical display name of the skill")
+    category: str = Field(..., description="Skill category, e.g. Languages, Databases, Tools")
+    status: Literal["matched", "partial", "not_found_in_resume"] = Field(
+        ...,
+        description="Match classification against candidate resume",
     )
-    status: str = Field("PARSED_SUCCESSFULLY", description="Parsing outcome status")
-    message: str = Field(
-        "Resume text extracted and verified successfully. Ready for Phase 2 skill matching.",
-        description="Human-readable status summary",
+    matched_term: Optional[str] = Field(
+        None,
+        description="The exact alias or variant detected in the document",
     )
-    disclaimer: str = Field(
-        "This is a Phase 1 ingestion validation response. Full keyword coverage scoring and bullet optimizations will be connected in Phase 2.",
-        description="Transparent scoring disclaimer",
+    evidence_snippet: Optional[str] = Field(
+        None,
+        description="Short text context from the resume verifying evidence of the skill",
     )
-    section_character_counts: Dict[str, int] = Field(
-        default_factory=dict,
-        description="Extracted character breakdown per detected section",
+    weight: float = Field(1.0, description="Relative weighting of this skill")
+    explanation: Optional[str] = Field(
+        None,
+        description="Clear, transparent reason for the classification status",
     )
+
+
+class MatchSummary(BaseModel):
+    """Summary counts and metrics for the deterministic skill match."""
+
+    total_requirements: int = Field(..., ge=0, description="Total distinct technical skills identified in JD")
+    matched_count: int = Field(..., ge=0, description="Number of skills directly matched with evidence")
+    partial_count: int = Field(..., ge=0, description="Number of skills with related or foundation evidence")
+    not_found_count: int = Field(..., ge=0, description="Number of skills absent from resume text")
+    earned_weight: Optional[float] = Field(None, description="Total weighted score points earned")
+    total_possible_weight: Optional[float] = Field(None, description="Maximum possible weighted score points")
+
+
+class DeterministicSkillAnalysis(BaseModel):
+    """Deterministic resume-to-job-description skill matching result."""
+
+    status: Literal["completed", "unable_to_score"] = Field(
+        ...,
+        description="Scoring outcome: completed or unable_to_score if JD lacks technical skills",
+    )
+    score: Optional[float] = Field(
+        None,
+        description="Transparent weighted keyword coverage score (0.0 - 100.0) or null if unable to score",
+    )
+    scoring_method_version: str = Field(
+        ...,
+        description="Version of the deterministic scoring method",
+    )
+    message: str = Field(..., description="Human-readable outcome description")
+    scoring_formula: str = Field(
+        ...,
+        description="Explicit mathematical formula used for scoring calculation",
+    )
+    summary: MatchSummary
+    matched_skills: List[EvaluatedSkill] = Field(
+        default_factory=list,
+        description="Skills directly matched with extracted evidence snippets",
+    )
+    partial_skills: List[EvaluatedSkill] = Field(
+        default_factory=list,
+        description="Skills where related technologies were detected in the resume",
+    )
+    not_found_skills: List[EvaluatedSkill] = Field(
+        default_factory=list,
+        description="Skills required by JD but not detected in the resume text",
+    )
+    all_requirements: List[EvaluatedSkill] = Field(
+        default_factory=list,
+        description="Complete list of all evaluated job requirements",
+    )
+    disclaimer_honest_scoring: str = Field(
+        ...,
+        description="Clear statement that score reflects text coverage, not ATS or hiring predictions",
+    )
+    disclaimer_not_found_skills: str = Field(
+        ...,
+        description="Clear notice that not found in resume does not mean candidate lacks practical skill",
+    )
+
+
+class PlaceholderAnalysis(BaseModel):
+    """Legacy/placeholder analysis result for backward compatibility."""
+
+    phase: str = Field("Phase 1 - Ingestion & Parser Core")
+    status: str = Field("PARSED_SUCCESSFULLY")
+    message: str = Field("Resume text extracted and verified successfully.")
+    disclaimer: str = Field("Legacy placeholder analysis.")
+    section_character_counts: Dict[str, int] = Field(default_factory=dict)
 
 
 class AnalysisResponse(BaseModel):
@@ -62,4 +133,11 @@ class AnalysisResponse(BaseModel):
     )
     resume_metadata: ResumeMetadata
     job_description_metadata: JobDescriptionMetadata
-    placeholder_analysis: PlaceholderAnalysis
+    analysis_result: DeterministicSkillAnalysis = Field(
+        ...,
+        description="Deterministic skill matching results, evidence snippets, and transparent coverage score",
+    )
+    placeholder_analysis: Optional[PlaceholderAnalysis] = Field(
+        None,
+        description="Deprecated Phase 1 placeholder retained for backward compatibility",
+    )

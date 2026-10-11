@@ -1,0 +1,472 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-10-11",
+  "description": "Editable skill dictionary for JobMate AI deterministic matching engine covering Python Developer, PHP Developer, and QA Automation Engineer roles.",
+  "roles_supported": [
+    "Python Developer",
+    "PHP Developer",
+    "QA Automation Engineer",
+    "General"
+  ],
+  "skills": [
+    {
+      "id": "python",
+      "canonical_name": "Python",
+      "category": "Languages",
+      "roles": ["Python Developer", "QA Automation Engineer", "General"],
+      "aliases": ["Python 3", "Python3", "Py"],
+      "related_skills": ["FastAPI", "Django", "Flask", "Pandas", "PyTest", "SQLAlchemy"],
+      "weight": 1.2
+    },
+    {
+      "id": "fastapi",
+      "canonical_name": "FastAPI",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["Fast API"],
+      "related_skills": ["Python", "Flask", "Django", "Starlette", "Pydantic", "REST APIs"],
+      "weight": 1.0
+    },
+    {
+      "id": "django",
+      "canonical_name": "Django",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["Django REST Framework", "DRF"],
+      "related_skills": ["Python", "FastAPI", "Flask", "SQLAlchemy"],
+      "weight": 1.0
+    },
+    {
+      "id": "flask",
+      "canonical_name": "Flask",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["Flask Framework"],
+      "related_skills": ["Python", "FastAPI", "Django"],
+      "weight": 1.0
+    },
+    {
+      "id": "sqlalchemy",
+      "canonical_name": "SQLAlchemy",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["SQL Alchemy"],
+      "related_skills": ["Python", "PostgreSQL", "MySQL", "SQL"],
+      "weight": 1.0
+    },
+    {
+      "id": "celery",
+      "canonical_name": "Celery",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["Celery Task Queue", "Celery Worker"],
+      "related_skills": ["Python", "Redis", "RabbitMQ"],
+      "weight": 1.0
+    },
+    {
+      "id": "asyncio",
+      "canonical_name": "AsyncIO",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["asyncio", "Async IO", "async/await"],
+      "related_skills": ["Python", "FastAPI"],
+      "weight": 1.0
+    },
+    {
+      "id": "pandas",
+      "canonical_name": "Pandas",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["pandas library"],
+      "related_skills": ["Python", "NumPy"],
+      "weight": 1.0
+    },
+    {
+      "id": "numpy",
+      "canonical_name": "NumPy",
+      "category": "Frameworks & Libraries",
+      "roles": ["Python Developer"],
+      "aliases": ["numpy library"],
+      "related_skills": ["Python", "Pandas"],
+      "weight": 1.0
+    },
+    {
+      "id": "php",
+      "canonical_name": "PHP",
+      "category": "Languages",
+      "roles": ["PHP Developer"],
+      "aliases": ["PHP 8", "PHP 7", "PHP8", "PHP7"],
+      "related_skills": ["Laravel", "Symfony", "CodeIgniter", "WordPress", "Composer"],
+      "weight": 1.2
+    },
+    {
+      "id": "laravel",
+      "canonical_name": "Laravel",
+      "category": "Frameworks & Libraries",
+      "roles": ["PHP Developer"],
+      "aliases": ["Laravel Framework", "Eloquent ORM", "Eloquent"],
+      "related_skills": ["PHP", "Symfony", "CodeIgniter", "MVC"],
+      "weight": 1.0
+    },
+    {
+      "id": "symfony",
+      "canonical_name": "Symfony",
+      "category": "Frameworks & Libraries",
+      "roles": ["PHP Developer"],
+      "aliases": ["Symfony Framework"],
+      "related_skills": ["PHP", "Laravel"],
+      "weight": 1.0
+    },
+    {
+      "id": "codeigniter",
+      "canonical_name": "CodeIgniter",
+      "category": "Frameworks & Libraries",
+      "roles": ["PHP Developer"],
+      "aliases": ["CodeIgniter 4", "CodeIgniter 3", "CI4"],
+      "related_skills": ["PHP", "Laravel"],
+      "weight": 1.0
+    },
+    {
+      "id": "wordpress",
+      "canonical_name": "WordPress",
+      "category": "Frameworks & Libraries",
+      "roles": ["PHP Developer"],
+      "aliases": ["WP", "WordPress CMS"],
+      "related_skills": ["PHP", "MySQL"],
+      "weight": 1.0
+    },
+    {
+      "id": "composer",
+      "canonical_name": "Composer",
+      "category": "Tools & Testing",
+      "roles": ["PHP Developer"],
+      "aliases": ["composer dependency manager"],
+      "related_skills": ["PHP", "Package Management"],
+      "weight": 0.8
+    },
+    {
+      "id": "phpunit",
+      "canonical_name": "PHPUnit",
+      "category": "Tools & Testing",
+      "roles": ["PHP Developer"],
+      "aliases": ["phpunit testing"],
+      "related_skills": ["PHP", "Unit Testing", "TDD"],
+      "weight": 1.0
+    },
+    {
+      "id": "selenium",
+      "canonical_name": "Selenium",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Selenium WebDriver", "Selenium Grid", "WebDriver"],
+      "related_skills": ["Cypress", "Playwright", "Test Automation", "Java", "Python"],
+      "weight": 1.2
+    },
+    {
+      "id": "cypress",
+      "canonical_name": "Cypress",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Cypress.io"],
+      "related_skills": ["Selenium", "Playwright", "Test Automation", "JavaScript"],
+      "weight": 1.1
+    },
+    {
+      "id": "playwright",
+      "canonical_name": "Playwright",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Playwright Test", "Playwright Automation"],
+      "related_skills": ["Cypress", "Selenium", "Test Automation", "TypeScript"],
+      "weight": 1.1
+    },
+    {
+      "id": "pytest",
+      "canonical_name": "PyTest",
+      "category": "Tools & Testing",
+      "roles": ["Python Developer", "QA Automation Engineer"],
+      "aliases": ["pytest", "py.test"],
+      "related_skills": ["Python", "Unit Testing", "Test Automation"],
+      "weight": 1.0
+    },
+    {
+      "id": "junit",
+      "canonical_name": "JUnit",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["JUnit 5", "JUnit4", "JUnit5"],
+      "related_skills": ["Java", "TestNG", "Unit Testing"],
+      "weight": 1.0
+    },
+    {
+      "id": "testng",
+      "canonical_name": "TestNG",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["TestNG framework"],
+      "related_skills": ["Java", "JUnit", "Selenium"],
+      "weight": 1.0
+    },
+    {
+      "id": "postman",
+      "canonical_name": "Postman",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer", "General"],
+      "aliases": ["Postman API", "Postman Collections"],
+      "related_skills": ["API Testing", "RestAssured", "REST APIs"],
+      "weight": 1.0
+    },
+    {
+      "id": "restassured",
+      "canonical_name": "RestAssured",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Rest-Assured", "Rest Assured"],
+      "related_skills": ["Java", "API Testing", "Postman"],
+      "weight": 1.0
+    },
+    {
+      "id": "appium",
+      "canonical_name": "Appium",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Appium Mobile", "Mobile Automation"],
+      "related_skills": ["Selenium", "Mobile Testing"],
+      "weight": 1.0
+    },
+    {
+      "id": "cucumber",
+      "canonical_name": "Cucumber",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Cucumber BDD", "BDD", "Gherkin"],
+      "related_skills": ["Test Automation", "Selenium"],
+      "weight": 1.0
+    },
+    {
+      "id": "test_automation",
+      "canonical_name": "Test Automation",
+      "category": "Architecture & Concepts",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Automated Testing", "Automation Testing", "Automation Framework"],
+      "related_skills": ["Selenium", "Cypress", "Playwright", "PyTest"],
+      "weight": 1.2
+    },
+    {
+      "id": "api_testing",
+      "canonical_name": "API Testing",
+      "category": "Architecture & Concepts",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["API Automation", "REST API Testing"],
+      "related_skills": ["Postman", "RestAssured", "REST APIs"],
+      "weight": 1.0
+    },
+    {
+      "id": "performance_testing",
+      "canonical_name": "Performance Testing",
+      "category": "Architecture & Concepts",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Load Testing", "JMeter", "Apache JMeter", "Stress Testing"],
+      "related_skills": ["Test Automation", "Performance"],
+      "weight": 1.0
+    },
+    {
+      "id": "regression_testing",
+      "canonical_name": "Regression Testing",
+      "category": "Architecture & Concepts",
+      "roles": ["QA Automation Engineer"],
+      "aliases": ["Regression Test Suite", "Regression"],
+      "related_skills": ["Test Automation", "Manual Testing"],
+      "weight": 0.9
+    },
+    {
+      "id": "jira",
+      "canonical_name": "JIRA",
+      "category": "Tools & Testing",
+      "roles": ["QA Automation Engineer", "General"],
+      "aliases": ["Jira Software", "Atlassian Jira", "Jira defect tracking"],
+      "related_skills": ["Agile", "Scrum", "Bug Tracking"],
+      "weight": 0.8
+    },
+    {
+      "id": "jenkins",
+      "canonical_name": "Jenkins",
+      "category": "Cloud & DevOps",
+      "roles": ["QA Automation Engineer", "General"],
+      "aliases": ["Jenkins CI", "Jenkins Pipeline"],
+      "related_skills": ["CI/CD", "Docker", "DevOps"],
+      "weight": 1.0
+    },
+    {
+      "id": "javascript",
+      "canonical_name": "JavaScript",
+      "category": "Languages",
+      "roles": ["PHP Developer", "QA Automation Engineer", "General"],
+      "aliases": ["JS", "ECMAScript", "Vanilla JS"],
+      "related_skills": ["TypeScript", "React", "Node.js", "Vue"],
+      "weight": 1.0
+    },
+    {
+      "id": "typescript",
+      "canonical_name": "TypeScript",
+      "category": "Languages",
+      "roles": ["General"],
+      "aliases": ["TS"],
+      "related_skills": ["JavaScript", "React", "Node.js"],
+      "weight": 1.0
+    },
+    {
+      "id": "react",
+      "canonical_name": "React",
+      "category": "Frameworks & Libraries",
+      "roles": ["PHP Developer", "General"],
+      "aliases": ["React.js", "ReactJS", "React Native"],
+      "related_skills": ["JavaScript", "TypeScript", "Frontend"],
+      "weight": 1.0
+    },
+    {
+      "id": "vue",
+      "canonical_name": "Vue",
+      "category": "Frameworks & Libraries",
+      "roles": ["PHP Developer", "General"],
+      "aliases": ["Vue.js", "VueJS"],
+      "related_skills": ["JavaScript", "Frontend"],
+      "weight": 1.0
+    },
+    {
+      "id": "postgresql",
+      "canonical_name": "PostgreSQL",
+      "category": "Databases",
+      "roles": ["Python Developer", "PHP Developer", "General"],
+      "aliases": ["Postgres", "PostgreSQL", "Postgres DB", "pg"],
+      "related_skills": ["SQL", "MySQL", "RDBMS", "SQLAlchemy"],
+      "weight": 1.0
+    },
+    {
+      "id": "mysql",
+      "canonical_name": "MySQL",
+      "category": "Databases",
+      "roles": ["PHP Developer", "Python Developer", "General"],
+      "aliases": ["MySQL DB", "MariaDB"],
+      "related_skills": ["SQL", "PostgreSQL", "RDBMS"],
+      "weight": 1.0
+    },
+    {
+      "id": "redis",
+      "canonical_name": "Redis",
+      "category": "Databases",
+      "roles": ["Python Developer", "PHP Developer", "General"],
+      "aliases": ["Redis Cache", "Redis DB"],
+      "related_skills": ["Caching", "Celery", "Memcached"],
+      "weight": 1.0
+    },
+    {
+      "id": "mongodb",
+      "canonical_name": "MongoDB",
+      "category": "Databases",
+      "roles": ["Python Developer", "General"],
+      "aliases": ["Mongo", "MongoDB Atlas"],
+      "related_skills": ["NoSQL", "Document DB"],
+      "weight": 1.0
+    },
+    {
+      "id": "sql",
+      "canonical_name": "SQL",
+      "category": "Databases",
+      "roles": ["Python Developer", "PHP Developer", "QA Automation Engineer", "General"],
+      "aliases": ["Structured Query Language", "SQL Queries"],
+      "related_skills": ["PostgreSQL", "MySQL", "RDBMS"],
+      "weight": 1.0
+    },
+    {
+      "id": "docker",
+      "canonical_name": "Docker",
+      "category": "Cloud & DevOps",
+      "roles": ["Python Developer", "PHP Developer", "QA Automation Engineer", "General"],
+      "aliases": ["Docker containers", "Docker containerization", "containerization"],
+      "related_skills": ["Kubernetes", "DevOps", "CI/CD"],
+      "weight": 1.0
+    },
+    {
+      "id": "kubernetes",
+      "canonical_name": "Kubernetes",
+      "category": "Cloud & DevOps",
+      "roles": ["Python Developer", "General"],
+      "aliases": ["K8s", "Kube"],
+      "related_skills": ["Docker", "DevOps", "Cloud"],
+      "weight": 1.0
+    },
+    {
+      "id": "aws",
+      "canonical_name": "AWS",
+      "category": "Cloud & DevOps",
+      "roles": ["Python Developer", "PHP Developer", "General"],
+      "aliases": ["Amazon Web Services", "AWS Cloud", "EC2", "S3", "AWS Lambda"],
+      "related_skills": ["Cloud", "GCP", "Azure", "DevOps"],
+      "weight": 1.0
+    },
+    {
+      "id": "git",
+      "canonical_name": "Git",
+      "category": "Tools & Testing",
+      "roles": ["Python Developer", "PHP Developer", "QA Automation Engineer", "General"],
+      "aliases": ["GitHub", "GitLab", "version control", "Git CLI"],
+      "related_skills": ["CI/CD", "DevOps"],
+      "weight": 0.8
+    },
+    {
+      "id": "cicd",
+      "canonical_name": "CI/CD",
+      "category": "Cloud & DevOps",
+      "roles": ["Python Developer", "QA Automation Engineer", "General"],
+      "aliases": ["CI-CD", "Continuous Integration", "Continuous Delivery", "CI/CD Pipelines"],
+      "related_skills": ["Jenkins", "GitHub Actions", "Docker"],
+      "weight": 1.0
+    },
+    {
+      "id": "rest_apis",
+      "canonical_name": "REST APIs",
+      "category": "Architecture & Concepts",
+      "roles": ["Python Developer", "PHP Developer", "QA Automation Engineer", "General"],
+      "aliases": ["RESTful API", "RESTful APIs", "RESTful Web Services", "REST API", "REST APIs"],
+      "related_skills": ["API Development", "Microservices", "FastAPI"],
+      "weight": 1.0
+    },
+    {
+      "id": "microservices",
+      "canonical_name": "Microservices",
+      "category": "Architecture & Concepts",
+      "roles": ["Python Developer", "PHP Developer", "General"],
+      "aliases": ["Microservice", "Microservice Architecture"],
+      "related_skills": ["REST APIs", "Docker", "Distributed Systems"],
+      "weight": 1.0
+    },
+    {
+      "id": "oop",
+      "canonical_name": "OOP",
+      "category": "Architecture & Concepts",
+      "roles": ["PHP Developer", "Python Developer", "QA Automation Engineer"],
+      "aliases": ["Object Oriented Programming", "Object-Oriented Programming", "OOPs"],
+      "related_skills": ["Design Patterns", "Clean Code"],
+      "weight": 0.9
+    },
+    {
+      "id": "mvc",
+      "canonical_name": "MVC",
+      "category": "Architecture & Concepts",
+      "roles": ["PHP Developer"],
+      "aliases": ["Model View Controller", "MVC Architecture"],
+      "related_skills": ["Laravel", "Symfony", "Design Patterns"],
+      "weight": 0.9
+    },
+    {
+      "id": "linux",
+      "canonical_name": "Linux",
+      "category": "Cloud & DevOps",
+      "roles": ["Python Developer", "PHP Developer", "QA Automation Engineer", "General"],
+      "aliases": ["Ubuntu", "Unix", "Linux OS"],
+      "related_skills": ["Bash", "Shell Scripting", "DevOps"],
+      "weight": 0.9
+    }
+  ]
+}

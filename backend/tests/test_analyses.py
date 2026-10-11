@@ -116,11 +116,46 @@ def test_successful_analysis_ingestion():
     assert jd_meta["character_count"] == len(VALID_JOB_DESCRIPTION)
     assert jd_meta["word_count"] > 15
 
+    # Verify Deterministic Skill Analysis
+    analysis = data["analysis_result"]
+    assert analysis["status"] == "completed"
+    assert analysis["score"] is not None
+    assert analysis["score"] > 0
+    assert analysis["scoring_method_version"] == "v1.0.0-deterministic"
+    assert len(analysis["matched_skills"]) > 0
+    assert "disclaimer_honest_scoring" in analysis
+    assert "disclaimer_not_found_skills" in analysis
+
     # Verify Placeholder Analysis
     placeholder = data["placeholder_analysis"]
     assert placeholder["status"] == "PARSED_SUCCESSFULLY"
     assert "Phase 1" in placeholder["phase"]
     assert "disclaimer" in placeholder
+
+
+def test_analysis_with_unrecognizable_jd_returns_unable_to_score():
+    """Verify that a JD with no technical skills yields status='unable_to_score' and score=None."""
+    generic_jd = (
+        "Seeking an enthusiastic individual with strong interpersonal skills, "
+        "excellent verbal communication, and a positive attitude toward teamwork."
+    )
+    response = client.post(
+        "/api/v1/analyses",
+        data={
+            "job_description": generic_jd,
+            "target_role": "Associate",
+            "consent": "true",
+        },
+        files={
+            "file": ("resume.pdf", VALID_TEXT_PDF_BYTES, "application/pdf"),
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    analysis = data["analysis_result"]
+    assert analysis["status"] == "unable_to_score"
+    assert analysis["score"] is None
+    assert "Unable to calculate score" in analysis["message"]
 
 
 # ==============================================================================

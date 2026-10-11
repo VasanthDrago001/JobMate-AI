@@ -7,10 +7,12 @@ from app.core.config import settings
 from app.core.exceptions import JobMateError
 from app.schemas.analysis import (
     AnalysisResponse,
+    DeterministicSkillAnalysis,
     JobDescriptionMetadata,
     PlaceholderAnalysis,
     ResumeMetadata,
 )
+from app.services.matching_service import matching_engine
 from app.services.pdf_service import parse_resume_pdf
 
 router = APIRouter()
@@ -20,11 +22,13 @@ router = APIRouter()
     "/analyses",
     response_model=AnalysisResponse,
     status_code=200,
-    summary="Upload Resume PDF and Job Description for Ingestion & Analysis",
+    summary="Upload Resume PDF and Job Description for Ingestion & Skill Alignment",
     description=(
         "Ingests a candidate resume PDF (max 5 MB) and job description string with explicit DPDP consent. "
         "Validates file signature, extracts text via layout-aware parser, detects scanned images/encryption, "
-        "and returns verified document metadata with Phase 1 placeholder analysis."
+        "and runs the deterministic skill matching engine across curated Python, PHP, and QA Automation taxonomies. "
+        "Returns verified document metadata, matched skills with evidence snippets, missing skills, and a "
+        "transparent weighted keyword coverage score."
     ),
 )
 async def create_analysis(
@@ -33,7 +37,7 @@ async def create_analysis(
     target_role: Optional[str] = Form(None, description="Optional target job title or role"),
     consent: bool = Form(..., description="Affirmative user consent under India DPDP Act 2023"),
 ) -> AnalysisResponse:
-    """Handle resume and job description ingestion and return validated metadata."""
+    """Handle resume and job description ingestion and return validated metadata and skill alignment."""
 
     # 1. Validate affirmative consent
     if not consent:
@@ -85,8 +89,16 @@ async def create_analysis(
             detail=f"An unexpected error occurred during PDF text extraction: {str(err)}",
         ) from err
 
-    # 5. Build structured response
+    # 5. Execute Deterministic Skill Matching Engine
     clean_role = target_role.strip() if target_role else None
+    match_dict = matching_engine.analyze(
+        resume_text=pdf_meta["raw_text"],
+        job_description=clean_jd,
+        target_role=clean_role,
+    )
+    analysis_result = DeterministicSkillAnalysis(**match_dict)
+
+    # 6. Build structured response
     jd_words = len(clean_jd.split())
     jd_chars = len(clean_jd)
 
@@ -111,16 +123,9 @@ async def create_analysis(
     placeholder_analysis = PlaceholderAnalysis(
         phase="Phase 1 - Ingestion & Parser Core",
         status="PARSED_SUCCESSFULLY",
-        message=(
-            f"Successfully parsed {pdf_meta['page_count']} page(s) and extracted {pdf_meta['word_count']} words. "
-            f"Detected sections: {', '.join(pdf_meta['detected_sections']) if pdf_meta['detected_sections'] else 'Standard text'}. "
-            "Ready for Phase 2 skill taxonomy matching."
-        ),
-        disclaimer=(
-            "This score reflects keyword alignment with your submitted job description. "
-            "Phase 1 provides validated text extraction without LLM synthesis."
-        ),
-        section_character_counts=pdf_meta["section_character_counts"],
+        message=analysis_result.message,
+        disclaimer=analysis_result.disclaimer_honest_scoring,
+        section_character_counts=pdf_meta.get("section_character_counts", {}),
     )
 
     return AnalysisResponse(
@@ -129,5 +134,6 @@ async def create_analysis(
         created_at=datetime.now(timezone.utc),
         resume_metadata=resume_metadata,
         job_description_metadata=jd_metadata,
+        analysis_result=analysis_result,
         placeholder_analysis=placeholder_analysis,
     )
