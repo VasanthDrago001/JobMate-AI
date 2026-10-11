@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     AI_MAX_OUTPUT_TOKENS: int = 1200
     AI_REQUEST_TIMEOUT_SECONDS: float = 8.0
 
+    # Job Finder Configuration
+    ADZUNA_APP_ID: str = ""
+    ADZUNA_APP_KEY: str = ""
+    JOB_CACHE_TTL_SECONDS: int = 3600
+    JOB_SEARCH_REQUEST_TIMEOUT_SECONDS: float = 8.0
+
     model_config = SettingsConfigDict(
         env_file=(".env", "backend/.env"),
         env_file_encoding="utf-8",

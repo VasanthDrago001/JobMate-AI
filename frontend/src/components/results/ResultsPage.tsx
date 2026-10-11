@@ -9,6 +9,7 @@ import { EvidenceDrawer } from './EvidenceDrawer';
 interface ResultsPageProps {
   result: AnalysisResult;
   onReanalyze: () => void;
+  onNavigateToJobs?: () => void;
 }
 
 type FilterTab = 'all' | 'matched' | 'missing';
@@ -16,6 +17,7 @@ type FilterTab = 'all' | 'matched' | 'missing';
 export const ResultsPage: React.FC<ResultsPageProps> = ({
   result,
   onReanalyze,
+  onNavigateToJobs,
 }) => {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [selectedEvidenceSkill, setSelectedEvidenceSkill] =
@@ -64,6 +66,16 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
         </button>
 
         <div className="action-buttons-group">
+          {onNavigateToJobs && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={onNavigateToJobs}
+              id="btn-nav-matching-jobs"
+            >
+              🎯 Find Matching Jobs ({matchedSkills.length})
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -429,6 +441,27 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
           ))}
         </div>
       </section>
+
+      {/* Section 4: Live Job Finder CTA Card */}
+      {onNavigateToJobs && (
+        <section className="glass-card cta-jobs-banner no-print" aria-label="Job Finder CTA">
+          <div className="cta-jobs-content">
+            <h3>🎯 Discover Real Indian IT Job Openings Aligned With Your Profile</h3>
+            <p>
+              We&apos;ve verified {matchedSkills.length} skills in your resume. Check live, legitimate vacancies
+              from top Indian IT tech firms and see your exact alignment percentage.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={onNavigateToJobs}
+            id="btn-explore-matching-jobs"
+          >
+            Explore Matching Jobs →
+          </button>
+        </section>
+      )}
 
       {/* Interactive Evidence Drawer Modal */}
       <EvidenceDrawer

@@ -233,4 +233,39 @@ describe('JobMate AI Frontend SaaS Interface', () => {
       screen.queryByRole('dialog', { name: /Evidence for:/i })
     ).not.toBeInTheDocument();
   });
+
+  it('navigates to Job Finder from Header navigation', async () => {
+    render(<App />);
+
+    const jobFinderBtn = screen.getAllByRole('button', { name: /Job Finder/i })[0];
+    fireEvent.click(jobFinderBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Skill-to-Company Indian IT Job Finder/i)).toBeInTheDocument();
+    });
+  });
+
+  it('transitions from Results page to Job Finder via CTA button', async () => {
+    render(<App />);
+
+    // Load sample and submit
+    fireEvent.click(screen.getByText(/🧪 Load Sample Profile & JD/i));
+    fireEvent.click(screen.getByTestId('btn-submit-analysis'));
+
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('coverage-score')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    // Click matching jobs CTA button
+    const ctaBtn = screen.getByRole('button', { name: /Explore Matching Jobs →/i });
+    fireEvent.click(ctaBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Skill-to-Company Indian IT Job Finder/i)).toBeInTheDocument();
+      expect(screen.getByText(/✓ FastAPI/i)).toBeInTheDocument();
+    });
+  });
 });

@@ -46,6 +46,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   className="footer-link-btn"
+                  onClick={() => onNavigate('jobs')}
+                >
+                  Job Finder 🎯
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="footer-link-btn"
                   onClick={() => onNavigate('privacy')}
                 >
                   Privacy Notice & DPDP 2023

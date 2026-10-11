@@ -64,6 +64,14 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             type="button"
+            className={`nav-link ${currentView === 'jobs' ? 'active' : ''}`}
+            onClick={() => handleNavClick('jobs')}
+            aria-current={currentView === 'jobs' ? 'page' : undefined}
+          >
+            Job Finder 🎯
+          </button>
+          <button
+            type="button"
             className={`nav-link ${currentView === 'privacy' ? 'active' : ''}`}
             onClick={() => handleNavClick('privacy')}
             aria-current={currentView === 'privacy' ? 'page' : undefined}
@@ -132,6 +140,13 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => handleNavClick('analyzer')}
           >
             Resume Analyzer
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-link ${currentView === 'jobs' ? 'active' : ''}`}
+            onClick={() => handleNavClick('jobs')}
+          >
+            Job Finder 🎯
           </button>
           <button
             type="button"
