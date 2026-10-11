@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.core.config import settings
+from app.core.exceptions import JobMateError
 from app.api.v1.router import api_router
 
 app = FastAPI(
@@ -10,7 +12,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json" if settings.DEBUG else None,
 )
 
-# CORS Middleware setup
+# CORS Middleware setup using environment-driven configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -19,7 +21,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Root-level health endpoint requested in specifications
+
+@app.exception_handler(JobMateError)
+async def jobmate_exception_handler(request: Request, exc: JobMateError):
+    """Global handler for domain-specific JobMate validation errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message},
+    )
+
+
+# Root-level health endpoint
 @app.get("/health", summary="Root Health Check", tags=["Health"])
 def health_check():
     """Root health check endpoint."""
@@ -42,4 +54,5 @@ def root():
         "message": "Welcome to JobMate AI API",
         "docs_url": "/docs" if settings.DEBUG else "disabled",
         "health_check": "/health",
+        "analyses_endpoint": f"{settings.API_V1_STR}/analyses",
     }
