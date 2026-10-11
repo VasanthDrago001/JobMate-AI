@@ -48,11 +48,11 @@ You must output a single JSON object with a "suggestions" array containing objec
 class GeminiProviderAdapter(LLMProviderAdapter):
     """Adapter for Google Gemini REST API with strict timeouts, structured output, and safety bounds."""
 
-    def __init__(self):
-        self.model = settings.AI_MODEL
+    def __init__(self, model: Optional[str] = None):
+        self._model = model
 
     def get_model_name(self) -> str:
-        return self.model
+        return self._model or settings.AI_MODEL
 
     def is_configured(self) -> bool:
         key = settings.GEMINI_API_KEY.strip()
@@ -105,7 +105,7 @@ Please rewrite each bullet using either the Google XYZ Formula or STAR Method, a
             },
         }
 
-        url = f"{GEMINI_API_BASE}/{self.model}:generateContent?key={settings.GEMINI_API_KEY.strip()}"
+        url = f"{GEMINI_API_BASE}/{self.get_model_name()}:generateContent?key={settings.GEMINI_API_KEY.strip()}"
 
         try:
             async with httpx.AsyncClient(timeout=settings.AI_REQUEST_TIMEOUT_SECONDS) as client:

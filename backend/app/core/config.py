@@ -51,16 +51,16 @@ class Settings(BaseSettings):
     # Database & AI configuration
     DATABASE_URL: str = ""
     GEMINI_API_KEY: str = ""
-    AI_MODEL: str = "gemini-1.5-flash"
+    AI_MODEL: str = "gemini-3.5-flash"
     AI_ENABLED: bool = True
     AI_DAILY_BUDGET_CALLS: int = 50
     AI_MAX_BULLETS_PER_REQUEST: int = 3
     AI_MAX_BULLET_CHARS: int = 400
-    AI_MAX_OUTPUT_TOKENS: int = 800
+    AI_MAX_OUTPUT_TOKENS: int = 1200
     AI_REQUEST_TIMEOUT_SECONDS: float = 8.0
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "backend/.env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
