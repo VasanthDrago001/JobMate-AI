@@ -12,6 +12,9 @@ export interface MatchedSkill {
   evidenceSnippet: string;
   section: string;
   pageNumber?: number;
+  status?: 'matched' | 'partial';
+  matchedTerm?: string;
+  explanation?: string;
 }
 
 export interface MissingSkill {
@@ -19,6 +22,7 @@ export interface MissingSkill {
   category: SkillCategory;
   importance: 'Must-Have' | 'Good-to-Have';
   recommendation: string;
+  explanation?: string;
 }
 
 export interface BulletImprovement {
@@ -28,6 +32,9 @@ export interface BulletImprovement {
   framework: 'Google XYZ Formula' | 'STAR Method';
   metricsGuidance: string;
   targetedSkills: string[];
+  reason?: string;
+  needsConfirmation?: boolean;
+  confirmationPrompt?: string | null;
 }
 
 export interface KeywordCoverage {
@@ -35,6 +42,7 @@ export interface KeywordCoverage {
   matchedCount: number;
   missingCount: number;
   totalIdentified: number;
+  partialCount?: number;
 }
 
 export interface AnalysisResult {
@@ -45,9 +53,19 @@ export interface AnalysisResult {
   keywordCoverage: KeywordCoverage;
   matchedSkills: MatchedSkill[];
   missingSkills: MissingSkill[];
+  partialSkills?: MatchedSkill[];
   bulletImprovements: BulletImprovement[];
   honestDisclaimer: string;
+  notFoundDisclaimer?: string;
   isMockDemo?: boolean;
+  scoreStatus?: 'completed' | 'unable_to_score';
+  scoreMessage?: string;
+  scoringFormula?: string;
+  scoringVersion?: string;
+  detectedSections?: string[];
+  pageCount?: number;
+  wordCount?: number;
+  isFallbackAi?: boolean;
 }
 
 export interface AnalysisFormData {

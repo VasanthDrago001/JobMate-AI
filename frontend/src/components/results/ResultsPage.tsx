@@ -48,6 +48,9 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
     (s: MissingSkill) => s.importance === 'Good-to-Have'
   );
 
+  const isUnableToScore = result.scoreStatus === 'unable_to_score';
+  const partialSkills = result.partialSkills || [];
+
   return (
     <div className="results-page container" id="printable-report">
       {/* Top Action Bar (Hidden during print) */}
@@ -89,6 +92,11 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
                 🧪 Sample Profile Preview
               </span>
             )}
+            {result.detectedSections && result.detectedSections.length > 0 && (
+              <span className="demo-evaluation-pill" style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399' }}>
+                📄 {result.pageCount ?? 1} Page(s) • {result.wordCount ?? 0} Words
+              </span>
+            )}
           </div>
           <h1 className="results-role-title">{result.targetRole}</h1>
           <div className="results-meta-row">
@@ -108,7 +116,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
             </span>
             <span className="separator">•</span>
             <span>
-              <strong>Engine:</strong> Indian IT Taxonomy Matcher v1.0
+              <strong>Engine:</strong> {result.scoringVersion || 'Indian IT Deterministic Matcher v1.0'}
             </span>
           </div>
         </div>
@@ -126,15 +134,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
               className="gauge-circle"
               style={
                 {
-                  '--percentage': `${keywordCoverage.percentage}%`,
+                  '--percentage': `${isUnableToScore ? 0 : keywordCoverage.percentage}%`,
                 } as React.CSSProperties
               }
             >
               <div className="gauge-inner">
                 <span className="gauge-number" data-testid="coverage-score">
-                  {keywordCoverage.percentage}%
+                  {isUnableToScore ? 'N/A' : `${keywordCoverage.percentage}%`}
                 </span>
-                <span className="gauge-label">Alignment</span>
+                <span className="gauge-label">
+                  {isUnableToScore ? 'No Skills' : 'Alignment'}
+                </span>
               </div>
             </div>
           </div>
@@ -142,10 +152,13 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
           {/* Breakdown Stats */}
           <div className="coverage-stats-box">
             <h2 id="coverage-heading" className="coverage-title">
-              Technical Keyword Alignment Overview
+              {isUnableToScore
+                ? 'Unable to Calculate Keyword Alignment'
+                : 'Technical Keyword Alignment Overview'}
             </h2>
             <p className="coverage-subtitle">
-              Calculated across 850+ technology stacks and contextual synonym mappings.
+              {result.scoreMessage ||
+                'Calculated across 850+ technology stacks and contextual synonym mappings.'}
             </p>
 
             <div className="stats-pills-grid">
@@ -153,6 +166,12 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
                 <span className="stat-card-num">{keywordCoverage.matchedCount}</span>
                 <span className="stat-card-lbl">Matched Skills (Verified)</span>
               </div>
+              {partialSkills.length > 0 && (
+                <div className="stat-card stat-secondary" style={{ borderLeft: '3px solid #818cf8' }}>
+                  <span className="stat-card-num">{partialSkills.length}</span>
+                  <span className="stat-card-lbl">Partial / Related</span>
+                </div>
+              )}
               <div className="stat-card stat-must-have">
                 <span className="stat-card-num">{mustHaveSkills.length}</span>
                 <span className="stat-card-lbl">Missing Must-Have</span>
@@ -175,7 +194,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
             💡
           </span>
           <p className="alert-strip-text">
-            <strong>Honest Scoring Disclaimer:</strong> {result.honestDisclaimer}
+            <strong>Honest Scoring Disclaimer:</strong>{' '}
+            {result.honestDisclaimer ? result.honestDisclaimer.replace(/^Honest Scoring Disclaimer:\s*/i, '') : ''}
           </p>
         </div>
       </section>

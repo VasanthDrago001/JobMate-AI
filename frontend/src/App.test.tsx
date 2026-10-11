@@ -3,10 +3,87 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import App from './App';
 import { api } from './services/api';
 
+const MOCK_BACKEND_RESPONSE = {
+  analysis_id: 'jm-test-12345',
+  status: 'completed',
+  created_at: new Date().toISOString(),
+  resume_metadata: {
+    file_name: 'Vasanth_Kumar_Resume_Backend_2026.pdf',
+    file_size_bytes: 104800,
+    page_count: 2,
+    character_count: 3200,
+    word_count: 480,
+    detected_sections: ['Skills', 'Experience', 'Projects'],
+    is_text_based: true,
+  },
+  job_description_metadata: {
+    target_role: 'Senior Backend Engineer',
+    character_count: 500,
+    word_count: 65,
+  },
+  analysis_result: {
+    status: 'completed',
+    score: 72.0,
+    scoring_method_version: 'v1.0.0-deterministic',
+    message: 'Extracted 12 requirements from job description',
+    scoring_formula: '((matched * 1.0) + (partial * 0.5)) / total * 100',
+    summary: {
+      total_requirements: 12,
+      matched_count: 8,
+      partial_count: 2,
+      not_found_count: 2,
+    },
+    matched_skills: [
+      {
+        skill_id: 'fastapi',
+        name: 'FastAPI',
+        category: 'Frameworks & Libraries',
+        status: 'matched',
+        matched_term: 'FastAPI',
+        evidence_snippet: 'Migrated legacy monolith endpoints to FastAPI microservices.',
+        weight: 1.0,
+        explanation: 'Matched with evidence.',
+      },
+    ],
+    partial_skills: [],
+    not_found_skills: [
+      {
+        skill_id: 'k8s',
+        name: 'Kubernetes',
+        category: 'Cloud & DevOps',
+        status: 'not_found_in_resume',
+        matched_term: null,
+        evidence_snippet: null,
+        weight: 1.0,
+        explanation: 'Kubernetes was not found in your resume.',
+      },
+    ],
+    all_requirements: [],
+    disclaimer_honest_scoring:
+      'Honest Scoring Disclaimer: This score reflects keyword alignment with the submitted job description, not an automated ATS hiring decision.',
+    disclaimer_not_found_skills: 'Not found does not mean you lack the skill.',
+  },
+  bullet_improvements: [
+    {
+      id: 'b-1',
+      original_bullet: 'Worked on backend APIs using FastAPI.',
+      suggested_rewrite:
+        'Engineered high-throughput REST APIs using FastAPI, decreasing latency by [quantify: e.g., 20%].',
+      reason: 'Applied Google XYZ Formula',
+      framework: 'Google XYZ Formula',
+      targeted_skills: ['FastAPI'],
+      needs_confirmation: true,
+      confirmation_prompt: 'Please confirm the latency reduction percentage.',
+    },
+  ],
+};
+
 vi.mock('./services/api', () => ({
   API_BASE_URL: 'http://127.0.0.1:8000',
   api: {
     checkHealth: vi.fn(),
+    analyzeResume: vi.fn(),
+    improveBullets: vi.fn(),
   },
 }));
 
@@ -20,6 +97,7 @@ describe('JobMate AI Frontend SaaS Interface', () => {
       version: '0.1.0',
       environment: 'development',
     });
+    vi.mocked(api.analyzeResume).mockResolvedValue(MOCK_BACKEND_RESPONSE as any);
   });
 
   it('renders landing page with title and Indian IT value proposition', () => {
@@ -119,7 +197,7 @@ describe('JobMate AI Frontend SaaS Interface', () => {
     expect(screen.getByText(/Matched Skills with Verified Resume Evidence/i)).toBeInTheDocument();
     expect(screen.getByText(/Keywords Not Found in Your Resume/i)).toBeInTheDocument();
     expect(screen.getByText(/Truthful Resume Bullet Improvements/i)).toBeInTheDocument();
-    expect(screen.getByText(/Honest Scoring Disclaimer:/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Honest Scoring Disclaimer:/i).length).toBeGreaterThan(0);
   });
 
   it('opens and closes evidence drawer when clicking a matched skill', async () => {
