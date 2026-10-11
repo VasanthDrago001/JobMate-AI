@@ -22,6 +22,12 @@ const COMMON_ROLES = [
   'Data Engineer (SQL / Python / Spark)',
 ];
 
+/**
+ * Resume and Job Description Analyzer input form page.
+ *
+ * Captures PDF upload, target role designation, job description requirements,
+ * and mandatory affirmative DPDP Act 2023 consent before initiating analysis.
+ */
 export const AnalyzerPage: React.FC<AnalyzerPageProps> = ({
   formData,
   onChangeFormData,
@@ -35,6 +41,10 @@ export const AnalyzerPage: React.FC<AnalyzerPageProps> = ({
   const isJdValid = formData.jobDescription.trim().length >= 50;
   const isConsentValid = formData.consentGiven;
 
+  /**
+   * Validates form completeness (file, JD length >= 50 chars, consent affirmed)
+   * and dispatches analysis initiation.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setValidationAttempted(true);
@@ -44,9 +54,13 @@ export const AnalyzerPage: React.FC<AnalyzerPageProps> = ({
     }
   };
 
+  /**
+   * Updates target role when a suggested role pill is clicked.
+   */
   const handleRoleSelect = (role: string) => {
     onChangeFormData({ targetRole: role });
   };
+
 
   const charCount = formData.jobDescription.length;
 

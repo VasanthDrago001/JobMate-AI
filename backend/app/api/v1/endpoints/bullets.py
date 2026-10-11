@@ -28,7 +28,20 @@ async def improve_resume_bullets(
     request: Request,
     payload: BulletImprovementRequest,
 ) -> BulletImprovementResponse:
-    """Improve candidate resume bullets with anti-hallucination guardrails and fallback safety."""
+    """Improve candidate resume bullets with anti-hallucination guardrails and fallback safety.
+
+    Purpose:
+        Restructures vague responsibility bullets into Google XYZ or STAR impact accomplishments
+        without inventing unperformed tasks, tools, dates, or false metrics.
+        Enforces client IP rate limiting and provides seamless fallback to deterministic guidance.
+
+    Args:
+        request: FastAPI HTTP request used for rate limiting.
+        payload: BulletImprovementRequest containing up to 3 candidate bullets and optional role context.
+
+    Returns:
+        BulletImprovementResponse with validated suggestions, framework names, and confirmation flags.
+    """
     # Enforce client IP rate limit
     rate_limiter.check_rate_limit(request, key="bullets", max_requests=30, window_seconds=60.0)
 

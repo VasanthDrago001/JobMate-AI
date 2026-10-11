@@ -15,6 +15,16 @@ interface ResultsPageProps {
 
 type FilterTab = 'all' | 'matched' | 'missing';
 
+/**
+ * Analysis Results Page component.
+ *
+ * Renders the verified skill alignment report:
+ * - Keyword and evidence coverage ratio.
+ * - Categorized matched skills with interactive line-by-line evidence drawer.
+ * - Prioritized missing skills (Must-Have vs Good-to-Have).
+ * - Truthful Google XYZ and STAR bullet rewrites with copy actions.
+ * - Print / PDF export and cross-navigation to Job Finder and Prep modules.
+ */
 export const ResultsPage: React.FC<ResultsPageProps> = ({
   result,
   onReanalyze,
@@ -26,21 +36,28 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
     useState<MatchedSkill | null>(null);
   const [copiedBulletId, setCopiedBulletId] = useState<string | null>(null);
 
+  /**
+   * Copies suggested bullet text to candidate's clipboard and displays temporary confirmation state.
+   */
   const handleCopyBullet = async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedBulletId(id);
       setTimeout(() => setCopiedBulletId(null), 2500);
     } catch {
-      // Fallback if clipboard API is restricted
+      // Fallback if clipboard API is restricted in iframe/test environment
       setCopiedBulletId(id);
       setTimeout(() => setCopiedBulletId(null), 2500);
     }
   };
 
+  /**
+   * Invokes native browser print dialog for paper or PDF export.
+   */
   const handlePrint = () => {
     window.print();
   };
+
 
   const { keywordCoverage, matchedSkills, missingSkills, bulletImprovements } =
     result;

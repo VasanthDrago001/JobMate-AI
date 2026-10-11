@@ -16,13 +16,32 @@ COMMON_TECH_TOKENS = {
 
 
 def extract_tech_words(text: str) -> Set[str]:
-    """Extract lowercased tech candidate tokens from text."""
+    """Extract lowercased tech candidate tokens from text.
+
+    Purpose:
+        Tokenizes sentences into alphanumeric and programming language symbol tokens (e.g. c++, c#)
+        for vocabulary overlap comparison.
+
+    Args:
+        text: Sentence or bullet string to tokenize.
+
+    Returns:
+        Set of lowercased token strings.
+    """
     words = re.findall(r"[A-Za-z0-9+#]+", text.lower())
     return set(words)
 
 
 def get_known_tech_tokens() -> Set[str]:
-    """Retrieve combined set of high-profile tech tokens and dictionary skill terms."""
+    """Retrieve combined set of high-profile tech tokens and dictionary skill terms.
+
+    Purpose:
+        Builds a comprehensive dictionary of known tech stacks to detect unauthorized
+        generative hallucinations inserted by LLMs.
+
+    Returns:
+        Set of lowercased known technology token strings.
+    """
     tokens = set(COMMON_TECH_TOKENS)
     try:
         from app.services.matching_service import matching_engine
@@ -42,11 +61,21 @@ def verify_rewrite_guardrails(
 ) -> Tuple[bool, bool, List[str]]:
     """Verify that a suggested rewrite does not inject fabricated facts or technologies.
 
+    Purpose:
+        Enforces JobMate AI's zero-fabrication pledge. Flags unverified tech tools,
+        unbracketed fake percentage metrics, invented dollar/rupee figures, hallucinated
+        calendar years, and fake scaling multipliers.
+
+    Args:
+        original_bullet: Candidate's original unedited resume bullet.
+        suggested_rewrite: Proposed rewrite from LLM.
+        allowed_target_skills: Declared target skills that are permissible to reference.
+
     Returns:
-        (is_valid, needs_confirmation, warnings)
-        - is_valid: False if severe hallucination (e.g. invented unrelated tech stacks)
-        - needs_confirmation: True if rewrite contains placeholder metrics or new unverified figures
-        - warnings: Human-readable list of detected modifications
+        Tuple of (is_valid, needs_confirmation, warnings):
+        - is_valid: False if severe hallucination (e.g. invented unrelated tech stacks).
+        - needs_confirmation: True if rewrite contains placeholder metrics or new unverified figures.
+        - warnings: Human-readable list of detected modifications.
     """
     warnings: List[str] = []
     needs_confirmation = False

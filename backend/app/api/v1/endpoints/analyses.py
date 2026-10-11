@@ -1,4 +1,6 @@
 import logging
+import os
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -43,8 +45,24 @@ async def create_analysis(
     target_role: Optional[str] = Form(None, description="Optional target job title or role"),
     consent: bool = Form(..., description="Affirmative user consent under India DPDP Act 2023"),
 ) -> AnalysisResponse:
-    """Handle resume and job description ingestion and return validated metadata and skill alignment."""
+    """Ingest resume PDF and Job Description, validate inputs, and compute deterministic skill alignment.
 
+    Purpose:
+        Serves as the core entrypoint for candidate resume evaluation against target job requirements.
+        Enforces strict DPDP Act 2023 consent, ephemeral in-memory processing without disk persistence,
+        and provides transparent evidence-grounded scoring.
+
+    Args:
+        request: FastAPI HTTP request used for client IP rate limiting.
+        file: Multipart uploaded PDF file containing candidate resume (max 5 MB).
+        job_description: Target role requirements text provided by user (50 - 10,000 characters).
+        target_role: Optional role designation string for context grounding.
+        consent: Affirmative boolean consent affirming ephemeral processing under DPDP Act 2023.
+
+    Returns:
+        AnalysisResponse containing document metadata, deterministic skill analysis, evidence snippets,
+        and optional non-crashing STAR/XYZ bullet rewrites.
+    """
     # 0. Enforce client IP rate limit
     rate_limiter.check_rate_limit(request, key="analyses", max_requests=15, window_seconds=60.0)
 
@@ -86,8 +104,6 @@ async def create_analysis(
             detail="Uploaded file must have a valid filename.",
         )
 
-    import os
-    import re
     safe_filename = os.path.basename(file.filename.strip())
     if len(safe_filename) > 255:
         raise HTTPException(

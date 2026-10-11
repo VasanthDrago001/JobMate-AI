@@ -46,7 +46,19 @@ SECTION_PATTERNS = {
 
 
 def validate_pdf_file_signature(file_bytes: bytes, filename: str) -> None:
-    """Validate that the uploaded file has a .pdf extension and valid %PDF- magic bytes."""
+    """Validate that the uploaded file has a .pdf extension and valid %PDF- magic bytes.
+
+    Purpose:
+        Prevents arbitrary file upload attacks by enforcing both file extension
+        and binary header signature verification.
+
+    Args:
+        file_bytes: Raw binary bytes of uploaded file.
+        filename: Original file name string.
+
+    Raises:
+        PDFValidationError: If file extension is not .pdf or magic bytes do not start with %PDF-.
+    """
     clean_name = filename.strip()
     if not clean_name.lower().endswith(".pdf"):
         raise PDFValidationError(
@@ -61,7 +73,17 @@ def validate_pdf_file_signature(file_bytes: bytes, filename: str) -> None:
 
 
 def validate_file_size(file_bytes: bytes) -> None:
-    """Validate that the uploaded file does not exceed the maximum allowed size."""
+    """Validate that the uploaded file does not exceed the maximum allowed size.
+
+    Purpose:
+        Guards memory limits and prevents denial-of-service through oversized payloads.
+
+    Args:
+        file_bytes: Raw binary bytes of uploaded file.
+
+    Raises:
+        PDFSizeLimitExceededError: If byte size exceeds configured MAX_FILE_SIZE_MB.
+    """
     max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
     if len(file_bytes) > max_bytes:
         size_mb = len(file_bytes) / (1024 * 1024)
@@ -71,7 +93,18 @@ def validate_file_size(file_bytes: bytes) -> None:
 
 
 def detect_sections(text: str) -> List[str]:
-    """Identify standard resume sections present in the text."""
+    """Identify standard resume sections present in the parsed text.
+
+    Purpose:
+        Enables structure inspection (Skills, Experience, Projects, Education, Certifications)
+        to inform candidates about section organization.
+
+    Args:
+        text: Extracted plain text from resume PDF.
+
+    Returns:
+        List of detected section name strings.
+    """
     detected = []
     for section_name, pattern in SECTION_PATTERNS.items():
         if pattern.search(text):
@@ -82,8 +115,24 @@ def detect_sections(text: str) -> List[str]:
 def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
     """Parse resume PDF with layout awareness, security validations, and ephemeral in-memory processing.
 
-    Processes PDF strictly in memory via io.BytesIO without writing unencrypted resume text to disk.
-    Does NOT log resume contents, email addresses, or phone numbers.
+    Purpose:
+        Extracts digital text from single- and multi-column tech resumes using pdfplumber layout engine.
+        Processes PDF strictly in memory via io.BytesIO without writing unencrypted resume text to disk.
+        Does NOT log resume contents, email addresses, or phone numbers in compliance with India DPDP Act 2023.
+
+    Args:
+        file_bytes: Raw bytes of uploaded resume PDF.
+        filename: Uploaded file name string.
+
+    Returns:
+        Dict containing document metadata (file name, size, page count, word count, detected sections)
+        and ephemeral raw text for downstream skill matching.
+
+    Raises:
+        PDFEncryptedError: If PDF has password encryption enabled.
+        PDFPageLimitExceededError: If page count exceeds maximum allowable limit.
+        PDFScannedImageError: If document contains insufficient digital text (scanned bitmap).
+        PDFMalformedError: If PDF syntax is corrupt or cannot be parsed.
     """
     start_time = time.perf_counter()
     clean_filename = os.path.basename(filename.strip())
@@ -98,76 +147,73 @@ def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
 
     # 2. Check for encryption or corruption via pypdf entirely in memory
     try:
-        try:
-            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-            if reader.is_encrypted:
-                raise PDFEncryptedError()
-            page_count = len(reader.pages)
-        except PDFEncryptedError:
-            raise
-        except Exception as e:
-            raise PDFMalformedError(f"The uploaded PDF is corrupt or malformed: {str(e)}") from e
+        reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+        if reader.is_encrypted:
+            raise PDFEncryptedError()
+        page_count = len(reader.pages)
+    except PDFEncryptedError:
+        raise
+    except Exception as e:
+        raise PDFMalformedError(f"The uploaded PDF is corrupt or malformed: {str(e)}") from e
 
-        # Validate page counts
-        if page_count == 0:
-            raise PDFEmptyError()
+    # Validate page counts
+    if page_count == 0:
+        raise PDFEmptyError()
 
-        if page_count > settings.MAX_RESUME_PAGES:
-            raise PDFPageLimitExceededError(
-                f"Resume contains {page_count} pages, which exceeds the maximum limit of {settings.MAX_RESUME_PAGES} pages."
-            )
-
-        # 3. Extract text with pdfplumber in memory for accurate column/layout extraction
-        extracted_pages: List[str] = []
-        try:
-            with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-                for page in pdf.pages:
-                    # layout=True preserves column separation in multi-column tech resumes
-                    page_text = page.extract_text(layout=True)
-                    if not page_text:
-                        page_text = page.extract_text() or ""
-                    extracted_pages.append(page_text)
-        except Exception as e:
-            raise PDFMalformedError(f"Error parsing PDF layout: {str(e)}") from e
-
-        full_text = "\n\n".join(extracted_pages).strip()
-
-        # 4. Detect scanned or image-only PDFs (insufficient digital text)
-        alnum_chars = sum(1 for c in full_text if c.isalnum())
-        if alnum_chars < settings.MIN_ALPHANUMERIC_CHARS:
-            raise PDFScannedImageError()
-
-        # 5. Extract structural metadata
-        detected = detect_sections(full_text)
-        word_count = len(full_text.split())
-        char_count = len(full_text)
-
-        elapsed_ms = (time.perf_counter() - start_time) * 1000
-
-        # Safe logging: ONLY file metadata, zero text or PII
-        logger.info(
-            "PDF parsed in-memory: filename=%s, size_bytes=%d, pages=%d, words=%d, elapsed_ms=%.1f",
-            safe_log_name,
-            len(file_bytes),
-            page_count,
-            word_count,
-            elapsed_ms,
+    if page_count > settings.MAX_RESUME_PAGES:
+        raise PDFPageLimitExceededError(
+            f"Resume contains {page_count} pages, which exceeds the maximum limit of {settings.MAX_RESUME_PAGES} pages."
         )
 
-        return {
-            "file_name": clean_filename,
-            "file_size_bytes": len(file_bytes),
-            "page_count": page_count,
-            "character_count": char_count,
-            "word_count": word_count,
-            "detected_sections": detected,
-            "section_character_counts": {
-                sec: len(full_text) // max(len(detected), 1) for sec in detected
-            },
-            "is_text_based": True,
-            # Note: Raw full_text is retained ephemerally in memory only, not logged or persisted to disk
-            "raw_text": full_text,
-        }
+    # 3. Extract text with pdfplumber in memory for accurate column/layout extraction
+    extracted_pages: List[str] = []
+    try:
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            for page in pdf.pages:
+                # layout=True preserves column separation in multi-column tech resumes
+                page_text = page.extract_text(layout=True)
+                if not page_text:
+                    page_text = page.extract_text() or ""
+                extracted_pages.append(page_text)
+    except Exception as e:
+        raise PDFMalformedError(f"Error parsing PDF layout: {str(e)}") from e
 
-    except Exception:
-        raise
+    full_text = "\n\n".join(extracted_pages).strip()
+
+    # 4. Detect scanned or image-only PDFs (insufficient digital text)
+    alnum_chars = sum(1 for c in full_text if c.isalnum())
+    if alnum_chars < settings.MIN_ALPHANUMERIC_CHARS:
+        raise PDFScannedImageError()
+
+    # 5. Extract structural metadata
+    detected = detect_sections(full_text)
+    word_count = len(full_text.split())
+    char_count = len(full_text)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+    # Safe logging: ONLY file metadata, zero text or PII
+    logger.info(
+        "PDF parsed in-memory: filename=%s, size_bytes=%d, pages=%d, words=%d, elapsed_ms=%.1f",
+        safe_log_name,
+        len(file_bytes),
+        page_count,
+        word_count,
+        elapsed_ms,
+    )
+
+    return {
+        "file_name": clean_filename,
+        "file_size_bytes": len(file_bytes),
+        "page_count": page_count,
+        "character_count": char_count,
+        "word_count": word_count,
+        "detected_sections": detected,
+        "section_character_counts": {
+            sec: len(full_text) // max(len(detected), 1) for sec in detected
+        },
+        "is_text_based": True,
+        # Note: Raw full_text is retained ephemerally in memory only, not logged or persisted to disk
+        "raw_text": full_text,
+    }
+

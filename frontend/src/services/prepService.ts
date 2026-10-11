@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './api';
+import { apiFetch } from './api';
 import type {
   TopicSummary,
   QuizQuestion,
@@ -58,6 +58,17 @@ export const prepService = {
   // ----------------------------------------------------
   // Local Gamification & DPDP-Compliant Storage
   // ----------------------------------------------------
+
+  /**
+   * Loads candidate learning progress from browser local storage.
+   *
+   * Purpose:
+   *   Preserves gamification state (XP, level, daily streaks, unlocked badges, and completed weeks)
+   *   locally in the candidate's browser without storing personal identifiers server-side.
+   *
+   * Returns:
+   *   PrepProgress object with current user stats, or initial default state if empty.
+   */
   loadProgress(): PrepProgress {
     try {
       const stored = localStorage.getItem(PREP_PROGRESS_STORAGE_KEY);
@@ -70,6 +81,14 @@ export const prepService = {
     return { ...INITIAL_PROGRESS };
   },
 
+  /**
+   * Saves updated learning progress to browser local storage.
+   *
+   * Purpose:
+   *   Persists XP increments and streak status in compliance with zero-PII client privacy.
+   *
+   * @param progress The updated PrepProgress state to store.
+   */
   saveProgress(progress: PrepProgress): void {
     try {
       localStorage.setItem(PREP_PROGRESS_STORAGE_KEY, JSON.stringify(progress));
@@ -78,6 +97,17 @@ export const prepService = {
     }
   },
 
+  /**
+   * Records a completed quiz drill, calculates daily streaks, level progression, and badge unlocks.
+   *
+   * Purpose:
+   *   Awards XP earned from quiz accuracy, computes streak continuations or resets based on calendar
+   *   dates, advances candidate levels (100 XP per level), and evaluates badge unlocking criteria.
+   *
+   * @param xpEarned Experience points earned from current quiz session.
+   * @param scorePct Accuracy percentage scored by candidate.
+   * @returns Updated PrepProgress state.
+   */
   recordQuizCompletion(xpEarned: number, scorePct: number): PrepProgress {
     const progress = this.loadProgress();
     const todayStr = new Date().toISOString().split('T')[0];
@@ -128,6 +158,16 @@ export const prepService = {
     return progress;
   },
 
+  /**
+   * Toggles completion status of a roadmap week and updates XP.
+   *
+   * Purpose:
+   *   Allows candidates to mark a study week done, rewarding +50 XP bonus and unlocking
+   *   the 'Milestone Finisher' badge upon their first completed week.
+   *
+   * @param weekNumber 1-based week index (1 to 4).
+   * @returns Updated PrepProgress state.
+   */
   toggleRoadmapWeek(weekNumber: number): PrepProgress {
     const progress = this.loadProgress();
     if (progress.completedRoadmapWeeks.includes(weekNumber)) {
@@ -157,14 +197,21 @@ export const prepService = {
   // ----------------------------------------------------
   // Backend API Calls with Offline Fallbacks
   // ----------------------------------------------------
+
+  /**
+   * Retrieves available technical and aptitude quiz topics.
+   *
+   * Purpose:
+   *   Fetches topic summaries and question counts from backend /api/v1/prep/topics.
+   *   Falls back to local topic catalog if backend is unavailable.
+   *
+   * @returns Promise resolving to an array of TopicSummary models.
+   */
   async getTopics(): Promise<TopicSummary[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/prep/topics`);
-      if (response.ok) {
-        return await response.json();
-      }
+      return await apiFetch<TopicSummary[]>('/api/v1/prep/topics', { timeoutMs: 5000 });
     } catch {
-      // Fallback
+      // Offline fallback
     }
 
     return [
@@ -201,6 +248,18 @@ export const prepService = {
     ];
   },
 
+  /**
+   * Retrieves practice questions for a topic and difficulty tier.
+   *
+   * Purpose:
+   *   Fetches sanitized multiple choice questions from backend /api/v1/prep/quizzes.
+   *   Falls back to local questions if offline.
+   *
+   * @param topic Target skill topic (e.g., 'Python', 'all').
+   * @param difficulty Optional difficulty level filter ('beginner', 'intermediate', 'advanced').
+   * @param limit Number of questions to return (default 5).
+   * @returns Promise resolving to an array of QuizQuestion objects.
+   */
   async getQuizQuestions(
     topic: string,
     difficulty?: DifficultyLevel | 'all',
@@ -212,12 +271,11 @@ export const prepService = {
     params.set('limit', String(limit));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/prep/quizzes?${params.toString()}`);
-      if (response.ok) {
-        return await response.json();
-      }
+      return await apiFetch<QuizQuestion[]>(`/api/v1/prep/quizzes?${params.toString()}`, {
+        timeoutMs: 6000,
+      });
     } catch {
-      // Fallback
+      // Offline fallback
     }
 
     // High quality offline fallback
@@ -264,18 +322,26 @@ export const prepService = {
     ];
   },
 
+  /**
+   * Evaluates candidate's quiz answers and records earned XP.
+   *
+   * Purpose:
+   *   Submits user answers to /api/v1/prep/quizzes/submit, updates candidate level and streak,
+   *   and returns detailed feedback with explanations.
+   *
+   * @param submission Candidate's selected option indices and topic name.
+   * @returns Promise resolving to QuizSessionResult.
+   */
   async submitQuiz(submission: QuizSubmission): Promise<QuizSessionResult> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/prep/quizzes/submit`, {
+      const result = await apiFetch<QuizSessionResult>('/api/v1/prep/quizzes/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submission),
+        timeoutMs: 8000,
       });
-      if (response.ok) {
-        const result: QuizSessionResult = await response.json();
-        this.recordQuizCompletion(result.xp_earned, result.score_percentage);
-        return result;
-      }
+      this.recordQuizCompletion(result.xp_earned, result.score_percentage);
+      return result;
     } catch {
       // Fallback evaluation
     }
@@ -309,6 +375,19 @@ export const prepService = {
     };
   },
 
+  /**
+   * Generates a deterministic 4-week interview roadmap from candidate resume strengths and JD gaps.
+   *
+   * Purpose:
+   *   Calls backend /api/v1/prep/roadmap to construct a structured weekly study plan.
+   *   Falls back to local roadmap template if backend is unavailable.
+   *
+   * @param targetRole Candidate's desired job title.
+   * @param matchedSkills Skills verified present in candidate's resume.
+   * @param missingMustHave Required skills absent from resume.
+   * @param missingGoodToHave Secondary skills absent from resume.
+   * @returns Promise resolving to PreparationRoadmap.
+   */
   async generateRoadmap(
     targetRole: string,
     matchedSkills: string[] = [],
@@ -316,7 +395,7 @@ export const prepService = {
     missingGoodToHave: string[] = []
   ): Promise<PreparationRoadmap> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/prep/roadmap`, {
+      return await apiFetch<PreparationRoadmap>('/api/v1/prep/roadmap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -325,10 +404,8 @@ export const prepService = {
           missing_must_have: missingMustHave,
           missing_good_to_have: missingGoodToHave,
         }),
+        timeoutMs: 8000,
       });
-      if (response.ok) {
-        return await response.json();
-      }
     } catch {
       // Fallback
     }

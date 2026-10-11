@@ -45,6 +45,21 @@ You must output a single JSON object with a "suggestions" array containing objec
 """
 
 
+def escape_xml(txt: str) -> str:
+    """Escapes XML/HTML delimiter characters in untrusted user strings.
+
+    Purpose:
+        Prevents prompt injection delimiters from closing security boundary tags (<untrusted_bullet>).
+
+    Args:
+        txt: Raw user string.
+
+    Returns:
+        Sanitized string safe to embed in XML tags.
+    """
+    return txt.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").strip()
+
+
 class GeminiProviderAdapter(LLMProviderAdapter):
     """Adapter for Google Gemini REST API with strict timeouts, structured output, and safety bounds."""
 
@@ -52,9 +67,11 @@ class GeminiProviderAdapter(LLMProviderAdapter):
         self._model = model
 
     def get_model_name(self) -> str:
+        """Returns configured or default Gemini model identifier string."""
         return self._model or settings.AI_MODEL
 
     def is_configured(self) -> bool:
+        """Verifies whether a valid non-placeholder GEMINI_API_KEY is present in environment."""
         key = settings.GEMINI_API_KEY.strip()
         return bool(key and key != "your_gemini_api_key_here")
 
@@ -64,25 +81,41 @@ class GeminiProviderAdapter(LLMProviderAdapter):
         target_role: Optional[str] = None,
         target_skills: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        """Call Gemini Flash API to generate structured truthful bullet improvements."""
+        """Call Gemini Flash API to generate structured truthful bullet improvements.
+
+        Purpose:
+            Wraps untrusted candidate text within secure boundary tags, dispatches asynchronous
+            HTTP request to Google Gemini API with JSON mode enabled, and parses validated rewrites.
+
+        Args:
+            bullets: List of sanitized candidate bullet strings (max 3).
+            target_role: Optional role context.
+            target_skills: Optional target skills list.
+
+        Returns:
+            List of raw suggestion dicts containing rewritten bullets and framework annotations.
+
+        Raises:
+            AIConfigurationError: If API key is missing.
+            AITimeoutError: If request exceeds deadline.
+            AIQuotaExceededError: If rate limited (HTTP 429).
+            AIProviderUnavailableError: If provider is unreachable or returns HTTP 5xx.
+        """
         if not self.is_configured():
             raise AIConfigurationError(
                 "GEMINI_API_KEY is not configured in the backend environment. "
                 "Please configure a valid key in backend/.env."
             )
 
-        skills_str = ", ".join(target_skills) if target_skills else "None specified"
-        def _escape_xml(txt: str) -> str:
-            return txt.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").strip()
-
-        role_str = _escape_xml(target_role or "Software Engineer")
-        skills_str = _escape_xml(", ".join(target_skills)) if target_skills else "None specified"
+        role_str = escape_xml(target_role or "Software Engineer")
+        skills_str = escape_xml(", ".join(target_skills)) if target_skills else "None specified"
 
         # Build prompt wrapping untrusted input securely
         bullets_formatted = "\n".join(
-            f'<untrusted_bullet index="{i+1}">{_escape_xml(b)}</untrusted_bullet>'
+            f'<untrusted_bullet index="{i+1}">{escape_xml(b)}</untrusted_bullet>'
             for i, b in enumerate(bullets)
         )
+
 
         user_prompt = f"""Target Role: <untrusted_context>{role_str}</untrusted_context>
 Target Skills: <untrusted_context>{skills_str}</untrusted_context>

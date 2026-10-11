@@ -13,6 +13,15 @@ interface QuizEngineProps {
   onNavigateToRoadmap?: () => void;
 }
 
+/**
+ * Interactive Technical Quiz Engine component.
+ *
+ * Provides timed multiple-choice practice drills across Indian IT tech stacks:
+ * - Real-time question progress bar.
+ * - Single-select choice tiles with accessible radio roles and keyboard focus.
+ * - Deterministic scoring and XP calculation upon submission.
+ * - In-depth conceptual explanations for every question option.
+ */
 export const QuizEngine: React.FC<QuizEngineProps> = ({
   initialTopic = 'all',
   onQuizCompleted,
@@ -39,7 +48,11 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
     });
   }, []);
 
-  // Fetch quiz questions
+  /**
+   * Fetches practice questions matching selected topic and difficulty tier.
+   *
+   * @param topicOverride Optional topic string to override selected state.
+   */
   const handleLoadQuiz = useCallback(async (topicOverride?: string) => {
     setIsLoading(true);
     setError(null);
@@ -72,6 +85,9 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
     handleLoadQuiz();
   }, [handleLoadQuiz]);
 
+  /**
+   * Records candidate's answer choice index for a question.
+   */
   const handleSelectOption = (questionId: string, optionIndex: number) => {
     if (quizResult) return; // Prevent change after submission
     setSelectedAnswers((prev) => ({
@@ -80,6 +96,9 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
     }));
   };
 
+  /**
+   * Evaluates answers and submits quiz session to backend / local evaluator.
+   */
   const handleSubmitQuiz = async () => {
     if (questions.length === 0) return;
 
@@ -116,6 +135,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
       setIsSubmitting(false);
     }
   };
+
 
   const currentQ = questions[currentQuestionIndex];
   const totalQ = questions.length;

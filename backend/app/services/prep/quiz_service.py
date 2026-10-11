@@ -51,7 +51,14 @@ class QuizService:
         )
 
     def get_available_topics(self) -> List[TopicSummary]:
-        """Returns list of distinct topics with counts and difficulty levels."""
+        """Return list of distinct practice topics with question counts and difficulty tiers.
+
+        Purpose:
+            Aggregates question bank metadata to populate topic selection menus in the UI.
+
+        Returns:
+            Alphabetically sorted list of TopicSummary models.
+        """
         summaries = []
         for topic, q_list in self._questions_by_topic.items():
             diffs = sorted(list(set(q.get("difficulty", "intermediate") for q in q_list)))
@@ -71,7 +78,20 @@ class QuizService:
         difficulty: Optional[str] = None,
         limit: int = 5,
     ) -> List[QuizQuestionPublic]:
-        """Fetches a set of questions without revealing the correct answer upfront."""
+        """Fetch a sanitized batch of practice questions without exposing answer keys.
+
+        Purpose:
+            Retrieves questions matching requested topic and difficulty, stripping internal
+            correct answer indices and explanations until submission time.
+
+        Args:
+            topic: Optional topic filter string (or 'all').
+            difficulty: Optional difficulty filter ('beginner', 'intermediate', 'advanced').
+            limit: Maximum number of questions to return (default 5).
+
+        Returns:
+            List of QuizQuestionPublic objects.
+        """
         candidates = []
 
         if topic and topic != "all":
@@ -105,7 +125,19 @@ class QuizService:
         ]
 
     def evaluate_quiz(self, submission: QuizSubmission) -> QuizSessionResult:
-        """Evaluates submitted answers, calculates score, explanations, and XP."""
+        """Evaluate submitted candidate answers, calculate score, explanations, and gamification XP.
+
+        Purpose:
+            Compares candidate answers against ground truth, calculates percentage score,
+            awards XP (+15 XP per correct answer, +20 bonus for >=80%), and provides
+            detailed explanations for interview review.
+
+        Args:
+            submission: QuizSubmission containing user answer choices.
+
+        Returns:
+            QuizSessionResult with breakdown, feedback message, and earned XP.
+        """
         results: List[QuizResultItem] = []
         correct_count = 0
 

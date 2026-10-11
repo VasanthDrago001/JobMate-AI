@@ -36,9 +36,11 @@ class JobFinderService:
         self._cache: Dict[str, Tuple[float, List[Dict[str, Any]]]] = {}
 
     def _get_cache_key(self, query: JobSearchFilter) -> str:
+        """Construct normalized composite cache key based on query filters."""
         return f"{query.role.strip().lower()}:{query.location.strip().lower()}:{query.work_mode}:{query.experience_level}"
 
     def _get_from_cache(self, key: str) -> Optional[List[Dict[str, Any]]]:
+        """Retrieve unexpired raw vacancy listings from in-memory cache if TTL is valid."""
         ttl = settings.JOB_CACHE_TTL_SECONDS
         now = time.monotonic()
         with self._cache_lock:
@@ -51,16 +53,28 @@ class JobFinderService:
         return None
 
     def _save_to_cache(self, key: str, items: List[Dict[str, Any]]) -> None:
+        """Atomically persist raw vacancy listings to in-memory cache with current monotonic timestamp."""
         with self._cache_lock:
             self._cache[key] = (time.monotonic(), items)
 
     def clear_cache(self) -> None:
-        """Clear cache entries (useful in unit testing)."""
+        """Clear cache entries (useful for testing or cache invalidation)."""
         with self._cache_lock:
             self._cache.clear()
 
     async def _fetch_raw_listings(self, query: JobSearchFilter) -> Tuple[List[Dict[str, Any]], bool]:
-        """Fetch raw listings from configured providers or cache."""
+        """Fetch raw listings across providers (Adzuna, Greenhouse, Curated) with cache fallback.
+
+        Purpose:
+            Aggregates job openings from configured live providers first, falling back to curated
+            verified Indian IT postings if live feeds are unconfigured or rate limited.
+
+        Args:
+            query: JobSearchFilter filter parameters.
+
+        Returns:
+            Tuple of (raw_items_list, is_cached_boolean).
+        """
         cache_key = self._get_cache_key(query)
         cached = self._get_from_cache(cache_key)
         if cached is not None:
@@ -92,11 +106,20 @@ class JobFinderService:
     ) -> Tuple[float, int, int, List[SkillMatchEvidence], str]:
         """Compare technical requirements in job snippet with candidate's analyzed skills.
 
+        Purpose:
+            Extracts requirements from job snippet using deterministic engine, cross-references
+            against verified candidate skills, and computes transparent alignment ratio.
+
+        Args:
+            job_snippet: Plain text description or summary of job vacancy.
+            candidate_skills: List of technical skill names verified from candidate's resume.
+
         Returns:
-            (match_score, matched_count, total_count, breakdown, summary_explanation)
+            Tuple of (match_score, matched_count, total_count, breakdown, summary_explanation).
         """
         # Extract requirements from job snippet using deterministic engine
         requirements = matching_engine.extract_requirements(job_snippet)
+
 
         if not requirements:
             # Fallback if snippet was very brief
@@ -262,7 +285,23 @@ class JobFinderService:
         return has_city_match or is_remote_job
 
     async def search_jobs(self, query: JobSearchFilter) -> JobSearchResponse:
-        """Search legitimate job sources, filter by criteria, evaluate candidate skill fit, and return sorted results."""
+        """Search legitimate job sources, filter by criteria, evaluate candidate skill fit, and return sorted results.
+
+        Purpose:
+            Executes full job discovery workflow:
+            1. Fetches listings from providers or cache.
+            2. Filters out listings older than 60 days.
+            3. Enforces strict work mode, experience tier, and location filters.
+            4. Computes deterministic skill overlap against candidate's analyzed profile.
+            5. Sorts by match score, recency, or company name.
+            6. Paginates and returns structured JobSearchResponse.
+
+        Args:
+            query: JobSearchFilter parameters containing search criteria and candidate skills.
+
+        Returns:
+            JobSearchResponse with evaluated listings, total match counts, and pagination metadata.
+        """
         raw_items, is_cached = await self._fetch_raw_listings(query)
 
         # Filter out expired listings (e.g. posted > 60 days ago if date available)

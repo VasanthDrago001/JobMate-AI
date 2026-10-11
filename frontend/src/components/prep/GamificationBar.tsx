@@ -5,10 +5,22 @@ interface GamificationBarProps {
   progress: PrepProgress;
 }
 
+/**
+ * Gamification Status Bar component.
+ *
+ * Displays candidate learning milestones:
+ * - Current level (derived from cumulative XP).
+ * - Animated XP progress mini-bar towards next level.
+ * - Daily practice streak counter.
+ * - Unlocked accomplishment badges.
+ */
 export const GamificationBar: React.FC<GamificationBarProps> = ({ progress }) => {
   const xpInCurrentLevel = progress.xp % 100;
   const levelProgressPct = Math.min(100, Math.max(0, xpInCurrentLevel));
 
+  /**
+   * Maps numerical level index to Indian IT engineering seniority rank title.
+   */
   const getRankTitle = (lvl: number): string => {
     if (lvl <= 1) return 'Aspiring Developer';
     if (lvl === 2) return 'Junior Engineer';
@@ -16,6 +28,7 @@ export const GamificationBar: React.FC<GamificationBarProps> = ({ progress }) =>
     if (lvl === 4) return 'Senior Specialist';
     return 'Staff / Tech Lead';
   };
+
 
   return (
     <div className="gamification-bar glass-card" aria-label="Learning Progress and XP">

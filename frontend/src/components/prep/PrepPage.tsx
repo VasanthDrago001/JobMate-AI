@@ -14,6 +14,14 @@ interface PrepPageProps {
   onNavigateToJobs?: () => void;
 }
 
+/**
+ * Interview Preparation & Skill Mastery Module page.
+ *
+ * Orchestrates:
+ * - Deterministic 4-week structured preparation roadmaps based on resume strengths and gaps.
+ * - Interactive technical quizzes with instant answer feedback and conceptual explanations.
+ * - Client-side gamification (XP, level badges, and daily practice streaks).
+ */
 export const PrepPage: React.FC<PrepPageProps> = ({
   initialRole = 'Senior Backend / Full-Stack Engineer',
   matchedSkills = ['Python', 'FastAPI', 'PostgreSQL'],
@@ -28,7 +36,9 @@ export const PrepPage: React.FC<PrepPageProps> = ({
   const [isLoadingRoadmap, setIsLoadingRoadmap] = useState<boolean>(false);
   const [activeQuizTopic, setActiveQuizTopic] = useState<string>('all');
 
-  // Load / generate roadmap
+  /**
+   * Fetches or deterministically synthesizes the 4-week preparation plan.
+   */
   const handleLoadRoadmap = useCallback(async () => {
     setIsLoadingRoadmap(true);
     try {
@@ -50,21 +60,31 @@ export const PrepPage: React.FC<PrepPageProps> = ({
     handleLoadRoadmap();
   }, [handleLoadRoadmap]);
 
+  /**
+   * Toggles completion status of a roadmap week and awards +50 XP bonus.
+   */
   const handleToggleRoadmapWeek = (weekNumber: number) => {
     const updated = prepService.toggleRoadmapWeek(weekNumber);
     setProgress({ ...updated });
   };
 
+  /**
+   * Refreshes client-side progress state after completing a technical quiz session.
+   */
   const handleQuizCompleted = () => {
     // Reload local progress after quiz completion
     const updated = prepService.loadProgress();
     setProgress({ ...updated });
   };
 
+  /**
+   * Switches to quiz view focused on a specific roadmap topic.
+   */
   const handleStartTopicDrill = (topicName: string) => {
     setActiveQuizTopic(topicName);
     setActiveTab('quiz');
   };
+
 
   return (
     <div className="prep-page container" id="prep-page-content">

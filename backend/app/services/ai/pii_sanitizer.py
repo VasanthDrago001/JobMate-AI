@@ -13,9 +13,17 @@ URL_REGEX = re.compile(r"https?://\S+|www\.\S+|linkedin\.com/\S+|github\.com/\S+
 def sanitize_bullet_text(text: str, max_length: int = 400) -> str:
     """Sanitize a candidate resume bullet before passing to LLM.
 
-    - Removes email addresses, phone numbers, and URLs.
-    - Truncates to max_length to limit token usage.
-    - Strips leading bullet marks and excessive whitespace.
+    Purpose:
+        Filters out sensitive Personally Identifiable Information (PII) including email addresses,
+        Indian/international phone numbers, and personal URLs in accordance with DPDP Act 2023.
+        Also strips formatting bullet characters and enforces token length limits.
+
+    Args:
+        text: Raw candidate bullet sentence.
+        max_length: Maximum allowed character length.
+
+    Returns:
+        Sanitized, redacted, and whitespace-normalized bullet string.
     """
     cleaned = text.strip()
 
@@ -39,10 +47,24 @@ def sanitize_bullet_text(text: str, max_length: int = 400) -> str:
 
 
 def sanitize_bullets(bullets: List[str], max_bullets: int = 3, max_length: int = 400) -> List[str]:
-    """Sanitize a list of bullets and limit to max_bullets."""
+    """Sanitize a list of bullets and limit to max_bullets.
+
+    Purpose:
+        Batches sanitization across multiple bullets while enforcing input bounds
+        to control LLM context size and cloud costs.
+
+    Args:
+        bullets: List of candidate bullet strings.
+        max_bullets: Maximum bullet count to process (default 3).
+        max_length: Maximum character length per bullet.
+
+    Returns:
+        List of sanitized, non-empty bullet strings.
+    """
     sanitized: List[str] = []
     for b in bullets[:max_bullets]:
         cleaned = sanitize_bullet_text(b, max_length=max_length)
         if cleaned:
             sanitized.append(cleaned)
     return sanitized
+

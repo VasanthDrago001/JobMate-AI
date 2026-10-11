@@ -8,12 +8,25 @@ interface RoadmapViewProps {
   onStartQuizTopic: (topicName: string) => void;
 }
 
+/**
+ * 4-Week Technical Preparation Roadmap View component.
+ *
+ * Displays a structured weekly preparation timeline:
+ * - Week 1: Core Foundation & Resume Strengths.
+ * - Week 2: Must-Have Gap Closure.
+ * - Week 3: Secondary Tooling & Scalable System Architecture.
+ * - Week 4: Behavioral STAR Storytelling & Mock Drills.
+ *
+ * Supports interactive week completion checkboxes (+50 XP bonus) and direct
+ * quick-launch buttons to practice quiz drills for each topic.
+ */
 export const RoadmapView: React.FC<RoadmapViewProps> = ({
   roadmap,
   progress,
   onToggleWeek,
   onStartQuizTopic,
 }) => {
+
   return (
     <div className="roadmap-view-container" id="printable-roadmap">
       {/* Overview Banner */}

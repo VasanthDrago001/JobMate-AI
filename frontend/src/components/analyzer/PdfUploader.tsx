@@ -7,6 +7,12 @@ interface PdfUploaderProps {
   error?: string | null;
 }
 
+/**
+ * Drag-and-drop accessible PDF uploader component.
+ *
+ * Validates document MIME types (.pdf) and byte limits (<= 5 MB),
+ * providing visual drag feedback and accessible keyboard controls.
+ */
 export const PdfUploader: React.FC<PdfUploaderProps> = ({
   selectedFile,
   fileName,
@@ -17,6 +23,9 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
   const [internalError, setInternalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Validates selected File object for PDF format and 5 MB size limit.
+   */
   const validateAndSetFile = (file: File) => {
     setInternalError(null);
 
@@ -40,16 +49,25 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
     onFileSelect(file, file.name);
   };
 
+  /**
+   * Handles dragover event to highlight drop target.
+   */
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
+  /**
+   * Handles dragleave event to reset dropzone visual state.
+   */
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   };
 
+  /**
+   * Handles file drop event and forwards first file for validation.
+   */
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -59,12 +77,18 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
     }
   };
 
+  /**
+   * Handles native file input change event from OS file picker.
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       validateAndSetFile(e.target.files[0]);
     }
   };
 
+  /**
+   * Clears selected file from state and resets native file input reference.
+   */
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
     onFileSelect(null, '');
@@ -73,6 +97,9 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
     }
   };
 
+  /**
+   * Formats raw byte count into human-readable KB / MB string.
+   */
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024 * 1024) {
       return `${(bytes / 1024).toFixed(0)} KB`;
@@ -81,6 +108,7 @@ export const PdfUploader: React.FC<PdfUploaderProps> = ({
   };
 
   const activeError = error || internalError;
+
 
   return (
     <div className="pdf-uploader-wrapper">

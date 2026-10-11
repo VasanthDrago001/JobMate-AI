@@ -40,6 +40,15 @@ const INITIAL_STAGE_INFO: StageInfo = {
   description: 'Initializing validation checks...',
 };
 
+/**
+ * Main Application Root component for JobMate AI.
+ *
+ * Coordinates:
+ * - View routing synchronized with browser URL hash (#analyzer, #jobs, #prep, #privacy, #results).
+ * - Backend service health monitoring.
+ * - Form state lifecycle and realistic sample evaluation loading.
+ * - Multi-stage resume alignment orchestration with stage-by-stage feedback.
+ */
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
@@ -49,7 +58,9 @@ export const App: React.FC = () => {
   const [currentStage, setCurrentStage] = useState<StageInfo>(INITIAL_STAGE_INFO);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Sync with browser URL hash for direct links and history navigation
+  /**
+   * Synchronizes browser URL hash fragments with the internal active view state.
+   */
   useEffect(() => {
     const syncHashToView = () => {
       const hash = window.location.hash.replace('#', '');
@@ -73,7 +84,9 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', syncHashToView);
   }, []);
 
-  // Check backend health on mount
+  /**
+   * Performs non-blocking health check against FastAPI backend to display connectivity pill.
+   */
   useEffect(() => {
     let isMounted = true;
     api
@@ -89,12 +102,16 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Update form data state
+  /**
+   * Updates partial fields in the candidate analysis form data.
+   */
   const handleUpdateFormData = useCallback((fields: Partial<AnalysisFormData>) => {
     setFormData((prev) => ({ ...prev, ...fields }));
   }, []);
 
-  // Load realistic sample profile
+  /**
+   * Loads pre-configured sample Indian IT Full-Stack / Backend candidate profile for fast demonstration.
+   */
   const handleLoadSample = useCallback(() => {
     setFormData({
       resumeFile: null,
@@ -106,10 +123,14 @@ export const App: React.FC = () => {
     setErrorMessage(null);
     setCurrentView('analyzer');
     window.location.hash = '#analyzer';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, []);
 
-  // Submit and run analysis
+  /**
+   * Dispatches resume analysis workflow across parser, matching engine, and bullet rewriter.
+   */
   const handleStartAnalysis = async () => {
     setIsAnalyzing(true);
     setErrorMessage(null);
@@ -122,7 +143,9 @@ export const App: React.FC = () => {
       setIsAnalyzing(false);
       setCurrentView('results');
       window.location.hash = '#results';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof window.scrollTo === 'function') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err) {
       setIsAnalyzing(false);
       const msg = err instanceof Error ? err.message : 'An unexpected error occurred.';
@@ -130,19 +153,26 @@ export const App: React.FC = () => {
     }
   };
 
-  // Cancel running analysis
+  /**
+   * Cancels in-flight analysis and restores initial idle state.
+   */
   const handleCancelAnalysis = () => {
     setIsAnalyzing(false);
     setCurrentStage(INITIAL_STAGE_INFO);
   };
 
-  // Navigation router
+  /**
+   * Dispatches view navigation, updates URL hash, and smoothly scrolls to page top.
+   */
   const handleNavigate = (view: AppView) => {
     setErrorMessage(null);
     setCurrentView(view);
     window.location.hash = view === 'landing' ? '' : `#${view}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
+
 
   return (
     <div className="app-wrapper">

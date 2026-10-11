@@ -6,10 +6,20 @@ interface EvidenceDrawerProps {
   onClose: () => void;
 }
 
+/**
+ * Contextual Evidence Modal Drawer component.
+ *
+ * Renders the exact sentence or bullet snippet located in the candidate's resume
+ * where a specific skill or alias was identified by the deterministic parser.
+ * Supports Escape key dismissal and click-outside backdrop dismissal.
+ */
 export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ skill, onClose }) => {
   React.useEffect(() => {
     if (!skill) return;
 
+    /**
+     * Closes the drawer when the user hits the Escape key for accessible keyboard navigation.
+     */
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -21,6 +31,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ skill, onClose }
   }, [skill, onClose]);
 
   if (!skill) return null;
+
 
   return (
     <div

@@ -27,13 +27,17 @@ DISCLAIMER_NOT_FOUND_SKILL = (
 def compile_skill_regex(term: str) -> re.Pattern:
     """Compile a regex pattern with punctuation-safe token boundaries.
 
-    Ensures:
-    - Multi-word terms and punctuation terms (e.g., C++, CI/CD, React.js) match accurately.
-    - Prevents common false-positives:
-      * 'Java' does not match within 'JavaScript'
-      * 'C' does not match within 'C++', 'C#', or 'CSS'
-      * 'JS' does not match within 'JSON'
-      * 'Post' does not match within 'PostgreSQL' or 'Postman'
+    Purpose:
+        Ensures accurate, boundary-aware technology term matching in resumes and job descriptions.
+        Handles multi-word phrases and punctuation terms (e.g., C++, C#, CI/CD, React.js) while
+        preventing common false positives (e.g., 'Java' inside 'JavaScript', 'C' inside 'CSS',
+        'JS' inside 'JSON', 'Post' inside 'PostgreSQL').
+
+    Args:
+        term: Raw skill or alias term string.
+
+    Returns:
+        Compiled case-insensitive re.Pattern.
     """
     clean_term = term.strip()
     escaped = re.escape(clean_term)
@@ -64,7 +68,18 @@ def extract_evidence_snippet(
 ) -> str:
     """Extract a concise, contextual snippet around the matched keyword.
 
-    Prefers extracting the whole bullet line or sentence containing the match.
+    Purpose:
+        Locates the exact sentence or bullet point where a skill was identified, providing
+        transparent proof to the user that the skill truly exists in their resume text.
+
+    Args:
+        text: Complete plain text of the resume.
+        match_start: Character offset start of match in text.
+        match_end: Character offset end of match in text.
+        max_length: Maximum allowed length of the extracted snippet (default 160).
+
+    Returns:
+        Clean, windowed sentence snippet string.
     """
     # 1. Locate the containing line boundaries
     line_start = text.rfind("\n", 0, match_start)
@@ -115,19 +130,35 @@ class SkillEntry:
     _compiled_patterns: List[Tuple[str, re.Pattern]] = field(default_factory=list, repr=False)
 
     def compile_patterns(self) -> None:
-        """Compile regex patterns for canonical name and all aliases, longest first."""
+        """Compile regex patterns for canonical name and all aliases, longest first.
+
+        Purpose:
+            Precomputes regex patterns for high-speed matching, ordering by descending length
+            to ensure longer phrases match before subphrases (e.g. 'React Native' before 'React').
+        """
         all_terms = [self.canonical_name] + [a for a in self.aliases if a != self.canonical_name]
         # Sort terms by length descending to match longest phrase first
         all_terms.sort(key=lambda x: len(x), reverse=True)
         self._compiled_patterns = [(t, compile_skill_regex(t)) for t in all_terms]
 
     def find_in_text(self, text: str) -> Optional[Tuple[str, int, int]]:
-        """Search text for this skill or its aliases. Returns (matched_term, start, end) or None."""
+        """Search text for this skill or any of its aliases.
+
+        Purpose:
+            Scans target text using precompiled boundary-safe patterns.
+
+        Args:
+            text: Text string to search within.
+
+        Returns:
+            Tuple of (matched_term, start_index, end_index) if found, or None.
+        """
         for term, pattern in self._compiled_patterns:
             m = pattern.search(text)
             if m:
                 return (term, m.start(), m.end())
         return None
+
 
 
 class SkillMatchingEngine:
@@ -146,7 +177,12 @@ class SkillMatchingEngine:
         return str(base_dir / "data" / "skill_dictionary.json")
 
     def load_dictionary(self) -> None:
-        """Load and compile the skill dictionary from JSON file."""
+        """Load and compile the skill dictionary from JSON file.
+
+        Purpose:
+            Reads curated Indian IT tech taxonomy, registers supported developer roles,
+            and compiles boundary-safe regex patterns for canonical skills and aliases.
+        """
         if not os.path.exists(self.dictionary_path):
             logger.warning("Skill dictionary not found at %s. Initializing empty dictionary.", self.dictionary_path)
             return
@@ -185,8 +221,17 @@ class SkillMatchingEngine:
     ) -> List[SkillEntry]:
         """Extract all technical skills mentioned in the job description.
 
-        Deduplicates canonical skills even if multiple aliases appear in the text.
-        Sorts candidates by phrase length descending to prevent substring false positives.
+        Purpose:
+            Identifies explicitly stated technical requirements in the job description text.
+            Deduplicates canonical skills even if multiple aliases appear in the text,
+            sorting candidates by phrase length descending to prevent substring false positives.
+
+        Args:
+            job_description: Plain text of target job description.
+            target_role: Optional target role designation string.
+
+        Returns:
+            Alphabetically sorted list of extracted SkillEntry requirements.
         """
         extracted_skills: Dict[str, SkillEntry] = {}
 
@@ -212,10 +257,18 @@ class SkillMatchingEngine:
     ) -> Dict[str, Any]:
         """Evaluate a single job requirement against the resume text.
 
-        Classification:
-        - 'matched': direct match of canonical name or any alias found in resume.
-        - 'partial': target skill absent, but a declared related skill is present.
-        - 'not_found_in_resume': neither skill nor related skills detected.
+        Purpose:
+            Deterministically classifies a required skill into:
+            - 'matched': direct match of canonical name or alias found in resume with evidence snippet.
+            - 'partial': direct skill absent, but candidate possesses a declared related skill.
+            - 'not_found_in_resume': skill and related skills absent from resume text.
+
+        Args:
+            requirement: SkillEntry requirement from job description.
+            resume_text: Extracted digital text of candidate's resume.
+
+        Returns:
+            Dict containing classification status, evidence snippet, weight, and explanation.
         """
         # 1. Direct match check
         direct_match = requirement.find_in_text(resume_text)
@@ -284,10 +337,18 @@ class SkillMatchingEngine:
     ) -> Dict[str, Any]:
         """Perform deterministic resume-to-job-description skill matching.
 
+        Purpose:
+            Extracts requirements, evaluates each against resume evidence, calculates transparent
+            weighted coverage percentage (1.0 for matched, 0.5 for partial), and returns full report.
+            Returns status 'unable_to_score' if no recognizable requirements could be extracted.
+
+        Args:
+            resume_text: Extracted resume plain text.
+            job_description: Job description text provided by candidate.
+            target_role: Optional target role title string.
+
         Returns:
-        - Structured evaluation with classifications (matched, partial, not_found_in_resume).
-        - Evidence snippets for matched and partial skills.
-        - Transparent weighted keyword coverage score or 'unable_to_score' if no requirements extracted.
+            Dict containing status, score, breakdown lists, formula description, and disclaimers.
         """
         requirements = self.extract_requirements(job_description, target_role)
 

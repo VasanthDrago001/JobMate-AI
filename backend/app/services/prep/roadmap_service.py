@@ -63,7 +63,22 @@ DEFAULT_TOPIC_DETAILS = {
 class RoadmapService:
     @staticmethod
     def generate_roadmap(request: RoadmapRequest) -> PreparationRoadmap:
-        """Generates a deterministic 4-week preparation plan grounded in verified resume strengths and gaps."""
+        """Generate a deterministic 4-week preparation plan grounded in verified resume strengths and gaps.
+
+        Purpose:
+            Synthesizes a structured, realistic interview preparation curriculum tailored to the candidate's
+            analyzed profile:
+            - Week 1: Reinforce verified strengths and language internals.
+            - Week 2: Bridge high-priority missing must-have gaps from the job description.
+            - Week 3: Master secondary architecture, caching, and scalability patterns.
+            - Week 4: Perform timed STAR drills, mock interview storytelling, and project defense rehearsals.
+
+        Args:
+            request: RoadmapRequest specifying target role, matched skills, and identified skill gaps.
+
+        Returns:
+            PreparationRoadmap with 4 structured weekly plans, concept lists, and hands-on exercises.
+        """
         matched = [s.strip() for s in request.matched_skills if s.strip()]
         must_haves = [s.strip() for s in request.missing_must_have if s.strip()]
         good_to_haves = [s.strip() for s in request.missing_good_to_have if s.strip()]
