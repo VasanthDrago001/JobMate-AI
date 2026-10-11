@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: jobmate-api
+    runtime: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PROJECT_NAME
+        value: JobMate AI Backend
+      - key: VERSION
+        value: 0.1.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "8000"
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: MAX_FILE_SIZE_MB
+        value: "5"
+      - key: MAX_RESUME_PAGES
+        value: "5"
+      - key: MIN_JD_LENGTH
+        value: "50"
+      - key: MAX_JD_LENGTH
+        value: "10000"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: gemini-2.0-flash
+      - key: AI_ENABLED
+        value: "true"
+      - key: AI_DAILY_BUDGET_CALLS
+        value: "100"
+      - key: AI_REQUEST_TIMEOUT_SECONDS
+        value: "8.0"
