@@ -122,6 +122,9 @@ class PlaceholderAnalysis(BaseModel):
     section_character_counts: Dict[str, int] = Field(default_factory=dict)
 
 
+from app.schemas.bullet import BulletSuggestion
+
+
 class AnalysisResponse(BaseModel):
     """Unified response model for POST /api/v1/analyses."""
 
@@ -136,6 +139,10 @@ class AnalysisResponse(BaseModel):
     analysis_result: DeterministicSkillAnalysis = Field(
         ...,
         description="Deterministic skill matching results, evidence snippets, and transparent coverage score",
+    )
+    bullet_improvements: List[BulletSuggestion] = Field(
+        default_factory=list,
+        description="Optional truthful bullet improvements using XYZ or STAR formula",
     )
     placeholder_analysis: Optional[PlaceholderAnalysis] = Field(
         None,

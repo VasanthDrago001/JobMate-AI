@@ -80,3 +80,45 @@ class UserConsentRequiredError(JobMateError):
         message: str = "Explicit consent is required for ephemeral resume processing under India's DPDP Act 2023.",
     ):
         super().__init__(message, status_code=400)
+
+
+class AIError(JobMateError):
+    """Base exception for AI provider and rewriter errors."""
+
+    def __init__(self, message: str = "An error occurred with the AI rewriter service.", status_code: int = 500):
+        super().__init__(message, status_code=status_code)
+
+
+class AIQuotaExceededError(AIError):
+    """Raised when daily AI budget or provider quota is reached."""
+
+    def __init__(self, message: str = "AI daily usage budget reached. Rules-based assistance is active."):
+        super().__init__(message, status_code=429)
+
+
+class AITimeoutError(AIError):
+    """Raised when an AI provider call times out."""
+
+    def __init__(self, message: str = "AI service request timed out. Please try again or use rules-based feedback."):
+        super().__init__(message, status_code=504)
+
+
+class AIProviderUnavailableError(AIError):
+    """Raised when the AI provider service is down or unreachable."""
+
+    def __init__(self, message: str = "The AI service provider is temporarily unavailable."):
+        super().__init__(message, status_code=503)
+
+
+class AIResponseValidationError(AIError):
+    """Raised when AI outputs unparseable or schema-violating JSON."""
+
+    def __init__(self, message: str = "AI returned an invalid structured response."):
+        super().__init__(message, status_code=422)
+
+
+class AIConfigurationError(AIError):
+    """Raised when AI API key or configuration is missing or invalid."""
+
+    def __init__(self, message: str = "AI service is not configured. Please supply a valid backend API key."):
+        super().__init__(message, status_code=503)

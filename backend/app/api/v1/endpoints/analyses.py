@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -12,8 +13,11 @@ from app.schemas.analysis import (
     PlaceholderAnalysis,
     ResumeMetadata,
 )
+from app.services.bullet_rewriter_service import bullet_rewriter_service
 from app.services.matching_service import matching_engine
 from app.services.pdf_service import parse_resume_pdf
+
+logger = logging.getLogger("jobmate.analyses")
 
 router = APIRouter()
 
@@ -128,6 +132,30 @@ async def create_analysis(
         section_character_counts=pdf_meta.get("section_character_counts", {}),
     )
 
+    # 6. Generate optional truthful bullet improvements (non-crashing fallback)
+    bullet_improvements = []
+    try:
+        raw_lines = [
+            line.strip() for line in pdf_meta.get("raw_text", "").split("\n")
+            if len(line.strip()) > 25 and not line.strip().startswith(("Vasanth", "Name", "Email", "Phone", "Technical Skills"))
+        ]
+        candidate_sample = [
+            line for line in raw_lines
+            if any(w in line.lower() for w in ["engineered", "developed", "built", "implemented", "scaled", "designed", "optimized", "tested"])
+        ][:2]
+
+        if candidate_sample:
+            target_skills = [s.name for s in analysis_result.matched_skills[:3]] or [s.name for s in analysis_result.all_requirements[:3]]
+            improvement_resp = await bullet_rewriter_service.improve_bullets(
+                bullets=candidate_sample,
+                target_role=clean_role,
+                target_skills=target_skills,
+                allow_fallback=True,
+            )
+            bullet_improvements = improvement_resp.suggestions
+    except Exception as err:
+        logger.warning("Bullet rewriter call failed in analysis, returning rules-based report without crashing: %s", err)
+
     return AnalysisResponse(
         analysis_id=analysis_id,
         status="completed",
@@ -135,5 +163,7 @@ async def create_analysis(
         resume_metadata=resume_metadata,
         job_description_metadata=jd_metadata,
         analysis_result=analysis_result,
+        bullet_improvements=bullet_improvements,
         placeholder_analysis=placeholder_analysis,
     )
+
