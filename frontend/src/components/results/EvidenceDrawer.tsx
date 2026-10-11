@@ -7,6 +7,19 @@ interface EvidenceDrawerProps {
 }
 
 export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ skill, onClose }) => {
+  React.useEffect(() => {
+    if (!skill) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [skill, onClose]);
+
   if (!skill) return null;
 
   return (

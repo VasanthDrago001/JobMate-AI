@@ -79,29 +79,29 @@ def detect_sections(text: str) -> List[str]:
     return detected
 
 
-def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
-    """Parse resume PDF with layout awareness, security validations, and ephemeral cleanup.
+import io
 
-    Keeps file in temporary storage and strictly cleans up in a finally block.
-    Does NOT log resume contents, email addresses or phone numbers.
+def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
+    """Parse resume PDF with layout awareness, security validations, and ephemeral in-memory processing.
+
+    Processes PDF strictly in memory via io.BytesIO without writing unencrypted resume text to disk.
+    Does NOT log resume contents, email addresses, or phone numbers.
     """
     start_time = time.perf_counter()
+    clean_filename = os.path.basename(filename.strip())
 
     # 1. Validate signature & size
-    validate_pdf_file_signature(file_bytes, filename)
+    validate_pdf_file_signature(file_bytes, clean_filename)
     validate_file_size(file_bytes)
 
-    # 2. Check for encryption or corruption via pypdf before detailed extraction
-    temp_file_path: str = ""
-    try:
-        # Create a NamedTemporaryFile with delete=False for robust cross-platform handle handling
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(file_bytes)
-            temp_file_path = tmp.name
+    # Mask any potential PII in filename for safe logging
+    safe_log_name = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}", "[EMAIL]", clean_filename)
+    safe_log_name = re.sub(r"\d{7,}", "[PHONE]", safe_log_name)
 
-        # Pre-check with pypdf for encryption
+    # 2. Check for encryption or corruption via pypdf entirely in memory
+    try:
         try:
-            reader = pypdf.PdfReader(temp_file_path)
+            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
             if reader.is_encrypted:
                 raise PDFEncryptedError()
             page_count = len(reader.pages)
@@ -119,10 +119,10 @@ def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
                 f"Resume contains {page_count} pages, which exceeds the maximum limit of {settings.MAX_RESUME_PAGES} pages."
             )
 
-        # 3. Extract text with pdfplumber for accurate column/layout extraction
+        # 3. Extract text with pdfplumber in memory for accurate column/layout extraction
         extracted_pages: List[str] = []
         try:
-            with pdfplumber.open(temp_file_path) as pdf:
+            with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
                 for page in pdf.pages:
                     # layout=True preserves column separation in multi-column tech resumes
                     page_text = page.extract_text(layout=True)
@@ -148,8 +148,8 @@ def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
 
         # Safe logging: ONLY file metadata, zero text or PII
         logger.info(
-            "PDF parsed successfully: filename=%s, size_bytes=%d, pages=%d, words=%d, elapsed_ms=%.1f",
-            filename,
+            "PDF parsed in-memory: filename=%s, size_bytes=%d, pages=%d, words=%d, elapsed_ms=%.1f",
+            safe_log_name,
             len(file_bytes),
             page_count,
             word_count,
@@ -157,7 +157,7 @@ def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
         )
 
         return {
-            "file_name": filename,
+            "file_name": clean_filename,
             "file_size_bytes": len(file_bytes),
             "page_count": page_count,
             "character_count": char_count,
@@ -167,14 +167,9 @@ def parse_resume_pdf(file_bytes: bytes, filename: str) -> Dict[str, Any]:
                 sec: len(full_text) // max(len(detected), 1) for sec in detected
             },
             "is_text_based": True,
-            # Note: Raw full_text is retained in memory for downstream processing, not logged or saved to disk
+            # Note: Raw full_text is retained ephemerally in memory only, not logged or persisted to disk
             "raw_text": full_text,
         }
 
-    finally:
-        # 6. Strict cleanup: delete temporary file whether parsing succeeded or failed
-        if temp_file_path and os.path.exists(temp_file_path):
-            try:
-                os.remove(temp_file_path)
-            except OSError as err:
-                logger.warning("Could not delete temporary PDF file %s: %s", temp_file_path, err)
+    except Exception:
+        raise

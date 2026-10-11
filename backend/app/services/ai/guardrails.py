@@ -4,6 +4,8 @@ from typing import List, Set, Tuple
 # Regex to detect unbracketed percentages or currency figures
 FABRICATED_PERCENT_REGEX = re.compile(r"(?<!\[)\b\d+(?:\.\d+)?%(?!\])")
 FABRICATED_CURRENCY_REGEX = re.compile(r"(?<!\[)[\$₹€£]\s*\d+(?:,\d+)*(?:\.\d+)?(?!\])")
+FABRICATED_YEAR_REGEX = re.compile(r"(?<!\[)\b(?:19|20)\d{2}\b(?!\])")
+FABRICATED_MULTIPLIER_REGEX = re.compile(r"(?<!\[)\b\d+x\b(?!\])", re.IGNORECASE)
 
 # High-profile technical terms commonly hallucinated
 COMMON_TECH_TOKENS = {
@@ -17,6 +19,20 @@ def extract_tech_words(text: str) -> Set[str]:
     """Extract lowercased tech candidate tokens from text."""
     words = re.findall(r"[A-Za-z0-9+#]+", text.lower())
     return set(words)
+
+
+def get_known_tech_tokens() -> Set[str]:
+    """Retrieve combined set of high-profile tech tokens and dictionary skill terms."""
+    tokens = set(COMMON_TECH_TOKENS)
+    try:
+        from app.services.matching_service import matching_engine
+        for skill in matching_engine.skills.values():
+            tokens.update(extract_tech_words(skill.canonical_name))
+            for alias in skill.aliases:
+                tokens.update(extract_tech_words(alias))
+    except Exception:
+        pass
+    return tokens
 
 
 def verify_rewrite_guardrails(
@@ -44,7 +60,8 @@ def verify_rewrite_guardrails(
     rewrite_tokens = extract_tech_words(suggested_rewrite)
 
     # 1. Check for injected tech tools not in original or allowed target skills
-    injected_tech = (rewrite_tokens.intersection(COMMON_TECH_TOKENS)) - allowed_tokens
+    known_tech = get_known_tech_tokens()
+    injected_tech = (rewrite_tokens.intersection(known_tech)) - allowed_tokens
     if injected_tech:
         # Severe hallucination: LLM injected technologies candidate never had
         warnings.append(
@@ -69,6 +86,20 @@ def verify_rewrite_guardrails(
     if rewrite_has_currency and not orig_has_currency:
         needs_confirmation = True
         warnings.append("Rewrite contains an unbracketed currency metric not present in the original bullet.")
+
+    # 4. Check for invented calendar years/dates where original had none
+    orig_has_year = bool(FABRICATED_YEAR_REGEX.search(original_bullet))
+    rewrite_has_year = bool(FABRICATED_YEAR_REGEX.search(suggested_rewrite))
+    if rewrite_has_year and not orig_has_year:
+        needs_confirmation = True
+        warnings.append("Rewrite contains a calendar year not present in the original bullet.")
+
+    # 5. Check for invented multipliers (e.g., 5x, 10x) where original had none
+    orig_has_mult = bool(FABRICATED_MULTIPLIER_REGEX.search(original_bullet))
+    rewrite_has_mult = bool(FABRICATED_MULTIPLIER_REGEX.search(suggested_rewrite))
+    if rewrite_has_mult and not orig_has_mult:
+        needs_confirmation = True
+        warnings.append("Rewrite contains an unbracketed scaling multiplier not present in the original bullet.")
 
     # If injected tech is found, is_valid is False if candidate didn't know the tool
     is_valid = len(injected_tech) == 0

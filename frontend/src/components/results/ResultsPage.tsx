@@ -257,9 +257,12 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({
                 onClick={() => setSelectedEvidenceSkill(skill)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) =>
-                  e.key === 'Enter' && setSelectedEvidenceSkill(skill)
-                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedEvidenceSkill(skill);
+                  }
+                }}
                 title="Click to view exact resume evidence snippet"
                 data-testid={`matched-skill-${skill.name}`}
               >

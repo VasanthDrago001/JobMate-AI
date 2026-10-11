@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.core.exceptions import (
     AIConfigurationError,
     AIError,
     AIQuotaExceededError,
     AITimeoutError,
 )
+from app.core.rate_limiter import rate_limiter
 from app.schemas.bullet import BulletImprovementRequest, BulletImprovementResponse
 from app.services.bullet_rewriter_service import bullet_rewriter_service
 
@@ -24,14 +25,18 @@ router = APIRouter()
     ),
 )
 async def improve_resume_bullets(
-    request: BulletImprovementRequest,
+    request: Request,
+    payload: BulletImprovementRequest,
 ) -> BulletImprovementResponse:
     """Improve candidate resume bullets with anti-hallucination guardrails and fallback safety."""
+    # Enforce client IP rate limit
+    rate_limiter.check_rate_limit(request, key="bullets", max_requests=30, window_seconds=60.0)
+
     try:
         response = await bullet_rewriter_service.improve_bullets(
-            bullets=request.bullets,
-            target_role=request.target_role,
-            target_skills=request.target_skills,
+            bullets=payload.bullets,
+            target_role=payload.target_role,
+            target_skills=payload.target_skills,
             allow_fallback=True,  # Non-crashing graceful fallback
         )
         return response

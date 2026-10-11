@@ -12,13 +12,17 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json" if settings.DEBUG else None,
 )
 
+import logging
+
+logger = logging.getLogger("jobmate.api")
+
 # CORS Middleware setup using environment-driven configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
 )
 
 
@@ -28,6 +32,19 @@ async def jobmate_exception_handler(request: Request, exc: JobMateError):
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.message},
+    )
+
+
+@app.exception_handler(Exception)
+async def global_unhandled_exception_handler(request: Request, exc: Exception):
+    """Global fallback handler for unexpected server errors.
+
+    Logs full details server-side while returning a sanitized client-safe response.
+    """
+    logger.error("Unhandled server exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred. Please try again later."},
     )
 
 

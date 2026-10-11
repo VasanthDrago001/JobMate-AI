@@ -3,9 +3,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from app.core.config import settings
 from app.core.exceptions import JobMateError
+from app.core.rate_limiter import rate_limiter
 from app.schemas.analysis import (
     AnalysisResponse,
     DeterministicSkillAnalysis,
@@ -36,12 +37,16 @@ router = APIRouter()
     ),
 )
 async def create_analysis(
+    request: Request,
     file: UploadFile = File(..., description="Resume PDF file (max 5 MB)"),
     job_description: str = Form(..., description="Target Job Description text (50 - 10,000 chars)"),
     target_role: Optional[str] = Form(None, description="Optional target job title or role"),
     consent: bool = Form(..., description="Affirmative user consent under India DPDP Act 2023"),
 ) -> AnalysisResponse:
     """Handle resume and job description ingestion and return validated metadata and skill alignment."""
+
+    # 0. Enforce client IP rate limit
+    rate_limiter.check_rate_limit(request, key="analyses", max_requests=15, window_seconds=60.0)
 
     # 1. Validate affirmative consent
     if not consent:
@@ -50,7 +55,7 @@ async def create_analysis(
             detail="Explicit user consent is required for ephemeral resume processing under India's DPDP Act 2023.",
         )
 
-    # 2. Validate job description length
+    # 2. Validate job description and target role length
     clean_jd = job_description.strip()
     if len(clean_jd) < settings.MIN_JD_LENGTH:
         raise HTTPException(
@@ -67,15 +72,44 @@ async def create_analysis(
             detail=f"Job description exceeds maximum allowed length of {settings.MAX_JD_LENGTH} characters.",
         )
 
-    # 3. Read uploaded file content
-    if not file.filename:
+    clean_role = target_role.strip() if target_role else None
+    if clean_role and len(clean_role) > 100:
+        raise HTTPException(
+            status_code=422,
+            detail="Target role exceeds maximum allowed length of 100 characters.",
+        )
+
+    # 3. Read uploaded file content with chunk-based size enforcement
+    if not file.filename or not file.filename.strip():
         raise HTTPException(
             status_code=400,
             detail="Uploaded file must have a valid filename.",
         )
 
+    import os
+    import re
+    safe_filename = os.path.basename(file.filename.strip())
+    if len(safe_filename) > 255:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename exceeds maximum allowed length of 255 characters.",
+        )
+
+    max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
+    chunks = []
+    total_size = 0
     try:
-        file_bytes = await file.read()
+        while chunk := await file.read(1024 * 1024):
+            total_size += len(chunk)
+            if total_size > max_bytes:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"Uploaded file size exceeds maximum limit of {settings.MAX_FILE_SIZE_MB} MB.",
+                )
+            chunks.append(chunk)
+        file_bytes = b"".join(chunks)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=400,
@@ -84,17 +118,19 @@ async def create_analysis(
 
     # 4. Parse & Validate PDF
     try:
-        pdf_meta = parse_resume_pdf(file_bytes, file.filename)
+        pdf_meta = parse_resume_pdf(file_bytes, safe_filename)
     except JobMateError as err:
         raise HTTPException(status_code=err.status_code, detail=err.message) from err
+    except HTTPException:
+        raise
     except Exception as err:
+        logger.error("Unexpected error during PDF text extraction: %s", err, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"An unexpected error occurred during PDF text extraction: {str(err)}",
+            detail="An unexpected error occurred during PDF text extraction. Please verify the document format.",
         ) from err
 
     # 5. Execute Deterministic Skill Matching Engine
-    clean_role = target_role.strip() if target_role else None
     match_dict = matching_engine.analyze(
         resume_text=pdf_meta["raw_text"],
         job_description=clean_jd,
@@ -132,12 +168,14 @@ async def create_analysis(
         section_character_counts=pdf_meta.get("section_character_counts", {}),
     )
 
-    # 6. Generate optional truthful bullet improvements (non-crashing fallback)
+    # 7. Generate optional truthful bullet improvements (non-crashing fallback)
     bullet_improvements = []
     try:
         raw_lines = [
             line.strip() for line in pdf_meta.get("raw_text", "").split("\n")
-            if len(line.strip()) > 25 and not line.strip().startswith(("Vasanth", "Name", "Email", "Phone", "Technical Skills"))
+            if len(line.strip()) > 25
+            and not re.search(r"@|phone|email|linkedin|github|\+91|[0-9]{10}", line.lower())
+            and not any(line.strip().lower().startswith(h) for h in ["name", "technical skills", "skills", "education", "certifications", "projects"])
         ]
         candidate_sample = [
             line for line in raw_lines

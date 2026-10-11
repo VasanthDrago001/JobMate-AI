@@ -27,7 +27,12 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => handleNavClick('landing')}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handleNavClick('landing')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleNavClick('landing');
+            }
+          }}
           aria-label="JobMate AI Home"
         >
           <div className="logo-badge" aria-hidden="true">

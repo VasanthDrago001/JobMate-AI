@@ -72,11 +72,15 @@ class GeminiProviderAdapter(LLMProviderAdapter):
             )
 
         skills_str = ", ".join(target_skills) if target_skills else "None specified"
-        role_str = target_role or "Software Engineer"
+        def _escape_xml(txt: str) -> str:
+            return txt.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").strip()
+
+        role_str = _escape_xml(target_role or "Software Engineer")
+        skills_str = _escape_xml(", ".join(target_skills)) if target_skills else "None specified"
 
         # Build prompt wrapping untrusted input securely
         bullets_formatted = "\n".join(
-            f"<untrusted_bullet index=\"{i+1}\">{b}</untrusted_bullet>"
+            f'<untrusted_bullet index="{i+1}">{_escape_xml(b)}</untrusted_bullet>'
             for i, b in enumerate(bullets)
         )
 
@@ -135,7 +139,8 @@ Please rewrite each bullet using either the Google XYZ Formula or STAR Method, a
             logger.error("Gemini API server outage: HTTP %s", response.status_code)
             raise AIProviderUnavailableError("Gemini API service is experiencing a temporary outage.")
         elif response.status_code != 200:
-            logger.error("Gemini API unexpected error: HTTP %s - %s", response.status_code, response.text)
+            safe_err_text = response.text[:120].replace("\n", " ") if response.text else "No details"
+            logger.error("Gemini API unexpected error: HTTP %s - %s", response.status_code, safe_err_text)
             raise AIError(f"AI provider returned an error: HTTP {response.status_code}")
 
         # Parse JSON response
