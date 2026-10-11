@@ -23,16 +23,30 @@ class GreenhouseJobAdapter(BaseJobProviderAdapter):
     """Adapter for official public Greenhouse career boards."""
 
     def __init__(self, timeout_seconds: Optional[float] = None):
+        """Initialize Greenhouse adapter with configurable request timeout.
+
+        Args:
+            timeout_seconds: Optional HTTP request timeout duration in seconds.
+        """
         self._timeout = timeout_seconds or settings.JOB_SEARCH_REQUEST_TIMEOUT_SECONDS
 
     def get_source_name(self) -> str:
+        """Returns the canonical provider identifier string."""
         return "greenhouse"
 
     def is_configured(self) -> bool:
+        """Indicates whether provider is operational (always True for public Greenhouse boards)."""
         return True  # Public read-only endpoints require no API key
 
     async def fetch_jobs(self, query: JobSearchFilter) -> List[Dict[str, Any]]:
-        """Query official public Greenhouse job boards for active tech positions."""
+        """Query official public Greenhouse job boards for active tech positions matching criteria.
+
+        Args:
+            query: JobSearchFilter specifying search criteria.
+
+        Returns:
+            List of normalized job dictionary records.
+        """
         normalized: List[Dict[str, Any]] = []
         role_lower = query.role.lower()
         role_tokens = set(re.findall(r"\w+", role_lower))

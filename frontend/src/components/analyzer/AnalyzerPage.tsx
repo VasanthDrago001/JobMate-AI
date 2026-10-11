@@ -5,7 +5,7 @@ import type { AnalysisFormData } from '../../types/analysis';
 import {
   SAMPLE_JOB_DESCRIPTION,
   SAMPLE_RESUME_FILENAME,
-} from '../../services/mockData';
+} from '../../data/sampleData';
 
 interface AnalyzerPageProps {
   formData: AnalysisFormData;

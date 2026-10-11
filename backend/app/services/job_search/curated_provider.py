@@ -120,13 +120,22 @@ class CuratedIndianTechJobProvider(BaseJobProviderAdapter):
     """Fallback provider offering real verified Indian IT positions for testing and offline resilience."""
 
     def get_source_name(self) -> str:
+        """Returns the canonical provider identifier string."""
         return "verified_curated"
 
     def is_configured(self) -> bool:
+        """Indicates whether this provider is operational (always True for curated listings)."""
         return True
 
     async def fetch_jobs(self, query: JobSearchFilter) -> List[Dict[str, Any]]:
-        """Filter verified real vacancies by role keywords and location."""
+        """Filter verified real Indian tech vacancies by role keywords, location, and work mode.
+
+        Args:
+            query: JobSearchFilter specifying search parameters.
+
+        Returns:
+            List of normalized job dictionary records matching criteria.
+        """
         role_tokens = set(re.findall(r"\w+", query.role.lower()))
         loc_filter = query.location.strip().lower()
 

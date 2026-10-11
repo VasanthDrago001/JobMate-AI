@@ -17,7 +17,7 @@ import { runResumeAnalysis } from './services/analysisService';
 import {
   SAMPLE_JOB_DESCRIPTION,
   SAMPLE_RESUME_FILENAME,
-} from './services/mockData';
+} from './data/sampleData';
 import type {
   AppView,
   AnalysisFormData,

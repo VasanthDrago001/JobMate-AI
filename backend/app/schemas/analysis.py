@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
+from app.schemas.bullet import BulletSuggestion
+
 
 class ResumeMetadata(BaseModel):
     """Metadata for the parsed resume document."""
@@ -120,9 +122,6 @@ class PlaceholderAnalysis(BaseModel):
     message: str = Field("Resume text extracted and verified successfully.")
     disclaimer: str = Field("Legacy placeholder analysis.")
     section_character_counts: Dict[str, int] = Field(default_factory=dict)
-
-
-from app.schemas.bullet import BulletSuggestion
 
 
 class AnalysisResponse(BaseModel):

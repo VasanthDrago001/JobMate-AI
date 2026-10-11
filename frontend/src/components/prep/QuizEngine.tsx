@@ -82,8 +82,35 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
 
   // Load quiz on mount or topic change
   useEffect(() => {
-    handleLoadQuiz();
-  }, [handleLoadQuiz]);
+    let isSubscribed = true;
+    prepService
+      .getQuizQuestions(
+        selectedTopic,
+        selectedDifficulty === 'all' ? undefined : selectedDifficulty,
+        5
+      )
+      .then((qList) => {
+        if (isSubscribed) {
+          setQuestions(qList);
+          setCurrentQuestionIndex(0);
+          setSelectedAnswers({});
+          setQuizResult(null);
+          setError(qList.length === 0 ? 'No questions found for the selected topic and difficulty.' : null);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isSubscribed) {
+          const msg = err instanceof Error ? err.message : 'Failed to retrieve quiz questions.';
+          setError(msg);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [selectedTopic, selectedDifficulty]);
 
   /**
    * Records candidate's answer choice index for a question.

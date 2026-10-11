@@ -26,10 +26,19 @@ class BulletRewriterService:
     """
 
     def __init__(self, adapter: Optional[LLMProviderAdapter] = None):
+        """Initialize the bullet rewriter service with an optional LLM adapter.
+
+        Args:
+            adapter: Optional LLMProviderAdapter instance; defaults to GeminiProviderAdapter.
+        """
         self._adapter = adapter or GeminiProviderAdapter()
 
     def set_adapter(self, adapter: LLMProviderAdapter) -> None:
-        """Dynamically inject an alternate adapter (e.g. for testing)."""
+        """Dynamically inject an alternate LLM adapter (e.g., MockProviderAdapter for testing).
+
+        Args:
+            adapter: The LLMProviderAdapter implementation to use.
+        """
         self._adapter = adapter
 
     @staticmethod

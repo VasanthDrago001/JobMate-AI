@@ -54,7 +54,6 @@ class MockProviderAdapter(LLMProviderAdapter):
 
         suggestions: List[Dict[str, Any]] = []
         skills = target_skills or ["Python"]
-        skills_str = ", ".join(skills)
 
         for b in bullets:
             if self.simulate_hallucination:

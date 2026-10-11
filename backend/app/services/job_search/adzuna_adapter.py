@@ -20,18 +20,34 @@ class AdzunaJobAdapter(BaseJobProviderAdapter):
         app_key: Optional[str] = None,
         timeout_seconds: Optional[float] = None,
     ):
+        """Initialize Adzuna API adapter with credentials and request timeout settings.
+
+        Args:
+            app_id: Optional Adzuna application ID; defaults to settings.ADZUNA_APP_ID.
+            app_key: Optional Adzuna application key; defaults to settings.ADZUNA_APP_KEY.
+            timeout_seconds: Maximum HTTP request duration in seconds.
+        """
         self._app_id = app_id or settings.ADZUNA_APP_ID.strip()
         self._app_key = app_key or settings.ADZUNA_APP_KEY.strip()
         self._timeout = timeout_seconds or settings.JOB_SEARCH_REQUEST_TIMEOUT_SECONDS
 
     def get_source_name(self) -> str:
+        """Returns the canonical provider identifier string."""
         return "adzuna"
 
     def is_configured(self) -> bool:
+        """Checks whether both App ID and App Key are configured in the environment."""
         return bool(self._app_id and self._app_key)
 
     async def fetch_jobs(self, query: JobSearchFilter) -> List[Dict[str, Any]]:
-        """Query Adzuna India endpoint for real IT job vacancies."""
+        """Query official Adzuna India Developer API for real IT vacancies matching criteria.
+
+        Args:
+            query: JobSearchFilter specifying search parameters.
+
+        Returns:
+            List of normalized job dictionary records.
+        """
         if not self.is_configured():
             logger.info("Adzuna API credentials not configured in backend environment.")
             return []

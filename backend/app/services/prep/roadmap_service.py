@@ -128,7 +128,7 @@ class RoadmapService:
         w2_topics: List[RoadmapTopicItem] = []
         target_gaps = must_haves[:3] if must_haves else ["Docker & Containerization", "Database Indexing Tuning"]
         for gap in target_gaps:
-            info = TECH_KNOWLEDGE_BASE.get(gap.lower(), DEFAULTTOPIC_DETAILS := DEFAULT_TOPIC_DETAILS)
+            info = TECH_KNOWLEDGE_BASE.get(gap.lower(), DEFAULT_TOPIC_DETAILS)
             w2_topics.append(
                 RoadmapTopicItem(
                     topic_name=gap,

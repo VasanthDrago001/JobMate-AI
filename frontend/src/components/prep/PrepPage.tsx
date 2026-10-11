@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { PreparationRoadmap, PrepProgress } from '../../types/prep';
 import { prepService } from '../../services/prepService';
 import { GamificationBar } from './GamificationBar';
@@ -33,32 +33,33 @@ export const PrepPage: React.FC<PrepPageProps> = ({
   const [activeTab, setActiveTab] = useState<'roadmap' | 'quiz'>('roadmap');
   const [progress, setProgress] = useState<PrepProgress>(() => prepService.loadProgress());
   const [roadmap, setRoadmap] = useState<PreparationRoadmap | null>(null);
-  const [isLoadingRoadmap, setIsLoadingRoadmap] = useState<boolean>(false);
+  const [isLoadingRoadmap, setIsLoadingRoadmap] = useState<boolean>(true);
   const [activeQuizTopic, setActiveQuizTopic] = useState<string>('all');
 
   /**
-   * Fetches or deterministically synthesizes the 4-week preparation plan.
+   * Fetches or deterministically synthesizes the 4-week preparation plan on mount or filter changes.
    */
-  const handleLoadRoadmap = useCallback(async () => {
-    setIsLoadingRoadmap(true);
-    try {
-      const generated = await prepService.generateRoadmap(
-        initialRole,
-        matchedSkills,
-        missingMustHave,
-        missingGoodToHave
-      );
-      setRoadmap(generated);
-    } catch {
-      // Handled via service fallback
-    } finally {
-      setIsLoadingRoadmap(false);
-    }
-  }, [initialRole, matchedSkills, missingMustHave, missingGoodToHave]);
-
   useEffect(() => {
-    handleLoadRoadmap();
-  }, [handleLoadRoadmap]);
+    let isSubscribed = true;
+
+    prepService
+      .generateRoadmap(initialRole, matchedSkills, missingMustHave, missingGoodToHave)
+      .then((generated) => {
+        if (isSubscribed) {
+          setRoadmap(generated);
+          setIsLoadingRoadmap(false);
+        }
+      })
+      .catch(() => {
+        if (isSubscribed) {
+          setIsLoadingRoadmap(false);
+        }
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [initialRole, matchedSkills, missingMustHave, missingGoodToHave]);
 
   /**
    * Toggles completion status of a roadmap week and awards +50 XP bonus.

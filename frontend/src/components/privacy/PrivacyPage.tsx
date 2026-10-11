@@ -91,8 +91,9 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onNavigate }) => {
               depth, system design interviews, and verified project contributions.
             </li>
             <li>
-              <strong>No Live Job Scraping:</strong> We do not show live job vacancies, scraped openings,
-              or affiliate application links in this MVP.
+              <strong>No Unauthorized Scraping:</strong> We do not scrape job portals. Our Job Finder
+              queries authorized developer APIs (such as the Adzuna API) and official public career
+              boards with direct links.
             </li>
           </ul>
         </section>
