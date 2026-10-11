@@ -1,198 +1,214 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
-import { api, API_BASE_URL } from './services/api';
-import type { HealthStatus } from './types/api';
+import { Header } from './components/common/Header';
+import { Footer } from './components/common/Footer';
+import { LandingPage } from './components/landing/LandingPage';
+import { AnalyzerPage } from './components/analyzer/AnalyzerPage';
+import { LoadingProgress } from './components/loading/LoadingProgress';
+import { ResultsPage } from './components/results/ResultsPage';
+import { PrivacyPage } from './components/privacy/PrivacyPage';
+import { EmptyState } from './components/feedback/EmptyState';
+import { ErrorState } from './components/feedback/ErrorState';
 
-type ConnectionState = 'idle' | 'checking' | 'connected' | 'error';
+import { api } from './services/api';
+import { runResumeAnalysis } from './services/analysisService';
+import {
+  SAMPLE_JOB_DESCRIPTION,
+  SAMPLE_RESUME_FILENAME,
+} from './services/mockData';
+import type {
+  AppView,
+  AnalysisFormData,
+  AnalysisResult,
+  StageInfo,
+} from './types/analysis';
+
+const INITIAL_FORM_DATA: AnalysisFormData = {
+  resumeFile: null,
+  resumeFileName: '',
+  targetRole: '',
+  jobDescription: '',
+  consentGiven: false,
+};
+
+const INITIAL_STAGE_INFO: StageInfo = {
+  stage: 'idle',
+  progressPercent: 0,
+  title: 'Preparing Analysis',
+  description: 'Initializing validation checks...',
+};
 
 export const App: React.FC = () => {
-  const [connectionState, setConnectionState] = useState<ConnectionState>('checking');
-  const [healthData, setHealthData] = useState<HealthStatus | null>(null);
-  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [currentView, setCurrentView] = useState<AppView>('landing');
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
+  const [formData, setFormData] = useState<AnalysisFormData>(INITIAL_FORM_DATA);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [currentStage, setCurrentStage] = useState<StageInfo>(INITIAL_STAGE_INFO);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const verifyBackendHealth = useCallback(async () => {
-    setConnectionState('checking');
-    setErrorMessage(null);
-    const startTime = performance.now();
+  // Sync with browser URL hash for direct links and history navigation
+  useEffect(() => {
+    const syncHashToView = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'analyzer') {
+        setCurrentView('analyzer');
+      } else if (hash === 'privacy') {
+        setCurrentView('privacy');
+      } else if (hash === 'results') {
+        setCurrentView('results');
+      } else if (hash === '' || hash === 'landing') {
+        setCurrentView('landing');
+      }
+    };
 
-    try {
-      const data = await api.checkHealth();
-      const endTime = performance.now();
-      setLatencyMs(Math.round(endTime - startTime));
-      setHealthData(data);
-      setConnectionState('connected');
-    } catch (err) {
-      setConnectionState('error');
-      setHealthData(null);
-      setLatencyMs(null);
-      const msg = err instanceof Error ? err.message : 'Unable to connect to backend';
-      setErrorMessage(msg);
-    }
+    syncHashToView();
+    window.addEventListener('hashchange', syncHashToView);
+    return () => window.removeEventListener('hashchange', syncHashToView);
   }, []);
 
+  // Check backend health on mount
   useEffect(() => {
-    verifyBackendHealth();
-  }, [verifyBackendHealth]);
+    let isMounted = true;
+    api
+      .checkHealth()
+      .then(() => {
+        if (isMounted) setIsBackendConnected(true);
+      })
+      .catch(() => {
+        if (isMounted) setIsBackendConnected(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Update form data state
+  const handleUpdateFormData = useCallback((fields: Partial<AnalysisFormData>) => {
+    setFormData((prev) => ({ ...prev, ...fields }));
+  }, []);
+
+  // Load realistic sample profile
+  const handleLoadSample = useCallback(() => {
+    setFormData({
+      resumeFile: null,
+      resumeFileName: SAMPLE_RESUME_FILENAME,
+      targetRole: 'Senior Backend / Full-Stack Engineer (SDE-2)',
+      jobDescription: SAMPLE_JOB_DESCRIPTION,
+      consentGiven: true,
+    });
+    setErrorMessage(null);
+    setCurrentView('analyzer');
+    window.location.hash = '#analyzer';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Submit and run analysis
+  const handleStartAnalysis = async () => {
+    setIsAnalyzing(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await runResumeAnalysis(formData, (stageInfo) => {
+        setCurrentStage(stageInfo);
+      });
+      setAnalysisResult(result);
+      setIsAnalyzing(false);
+      setCurrentView('results');
+      window.location.hash = '#results';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      setIsAnalyzing(false);
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setErrorMessage(msg);
+    }
+  };
+
+  // Cancel running analysis
+  const handleCancelAnalysis = () => {
+    setIsAnalyzing(false);
+    setCurrentStage(INITIAL_STAGE_INFO);
+  };
+
+  // Navigation router
+  const handleNavigate = (view: AppView) => {
+    setErrorMessage(null);
+    setCurrentView(view);
+    window.location.hash = view === 'landing' ? '' : `#${view}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="app-wrapper">
-      {/* Header */}
-      <header className="app-header">
-        <div className="container header-content">
-          <div className="brand-logo">
-            <span className="logo-badge">JM</span>
-            <div>
-              <div className="brand-name">JobMate AI</div>
-              <div className="brand-target">Indian IT Career Intelligence</div>
-            </div>
-          </div>
+      {/* Universal Top Header */}
+      <Header
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        isBackendConnected={isBackendConnected}
+      />
 
-          <div className="status-pill" data-testid="status-pill">
-            <span
-              className={`status-dot ${
-                connectionState === 'connected'
-                  ? 'online'
-                  : connectionState === 'checking'
-                  ? 'checking'
-                  : 'error'
-              }`}
-            />
-            <span>
-              {connectionState === 'connected' && 'API Online'}
-              {connectionState === 'checking' && 'Checking API...'}
-              {connectionState === 'error' && 'API Offline'}
-            </span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Body */}
-      <main className="main-content">
-        <div className="container">
-          {/* Hero Section */}
-          <section className="hero-section">
-            <div className="hero-badge-container">
-              <span className="hero-badge">Phase 0 Completed • Repository Initialized</span>
-            </div>
-            <h1 className="hero-title">
-              Targeted, Truthful Resume Alignment for{' '}
-              <span className="gradient-text">Indian IT Engineers</span>
-            </h1>
-            <p className="hero-subtext">
-              Zero hallucinated skills. Real keyword evidence. STAR/XYZ bullet rewrites strictly
-              tailored to your target job description. Built for high-volume IT competitive hiring.
-            </p>
-          </section>
-
-          {/* Backend Connectivity Card */}
-          <section className="glass-card status-card" data-testid="health-card">
-            <div className="status-header">
-              <div className="status-title-group">
-                <h3>Backend Connectivity Verification</h3>
-                <span className="tag">FastAPI Core</span>
-              </div>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={verifyBackendHealth}
-                disabled={connectionState === 'checking'}
-              >
-                {connectionState === 'checking' ? 'Testing...' : 'Ping /health'}
-              </button>
-            </div>
-
-            <div className="status-grid">
-              <div className="status-item">
-                <span className="status-label">Service Status</span>
-                <span className="status-val">
-                  {connectionState === 'connected' && 'Online (200 OK)'}
-                  {connectionState === 'checking' && 'Pinging...'}
-                  {connectionState === 'error' && 'Disconnected'}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="status-label">Latency</span>
-                <span className="status-val">{latencyMs !== null ? `${latencyMs} ms` : '—'}</span>
-              </div>
-              <div className="status-item">
-                <span className="status-label">Environment</span>
-                <span className="status-val">{healthData?.environment ?? 'development'}</span>
-              </div>
-              <div className="status-item">
-                <span className="status-label">API Gateway</span>
-                <span className="status-val" style={{ fontSize: '0.8rem' }}>
-                  {API_BASE_URL}
-                </span>
-              </div>
-            </div>
-
-            {errorMessage && (
-              <div
-                style={{
-                  marginTop: '16px',
-                  padding: '12px',
-                  borderRadius: '6px',
-                  background: 'rgba(244, 63, 94, 0.1)',
-                  border: '1px solid rgba(244, 63, 94, 0.3)',
-                  color: '#fda4af',
-                  fontSize: '0.85rem',
-                }}
-              >
-                <strong>Connection note:</strong> {errorMessage}. (Start the backend using{' '}
-                <code>python app/main.py</code> or <code>uvicorn app.main:app</code>).
-              </div>
+      {/* Main Content Area */}
+      <main className="main-content" id="main-content">
+        {/* State 1: Active Analysis in Progress */}
+        {isAnalyzing ? (
+          <LoadingProgress
+            stageInfo={currentStage}
+            onCancel={handleCancelAnalysis}
+          />
+        ) : errorMessage ? (
+          /* State 2: Error State */
+          <ErrorState
+            errorMessage={errorMessage}
+            onRetry={handleStartAnalysis}
+            onReset={() => {
+              setErrorMessage(null);
+              setCurrentView('analyzer');
+            }}
+          />
+        ) : (
+          /* State 3: Page Views */
+          <>
+            {currentView === 'landing' && (
+              <LandingPage
+                onNavigate={handleNavigate}
+                onLoadSample={handleLoadSample}
+              />
             )}
-          </section>
 
-          {/* Architectural Pillars */}
-          <section className="pillars-grid">
-            <div className="glass-card pillar-card">
-              <div className="pillar-icon">🎯</div>
-              <h2 className="pillar-title">Transparent Keyword Gap</h2>
-              <p className="pillar-desc">
-                Clear categorization of missing must-have vs. good-to-have technical skills, with
-                instant line-level evidence for all matched keywords.
-              </p>
-            </div>
+            {currentView === 'analyzer' && (
+              <AnalyzerPage
+                formData={formData}
+                onChangeFormData={handleUpdateFormData}
+                onSubmitAnalysis={handleStartAnalysis}
+                onLoadSample={handleLoadSample}
+              />
+            )}
 
-            <div className="glass-card pillar-card">
-              <div className="pillar-icon">✍️</div>
-              <h2 className="pillar-title">Truthful Bullet Rewrites</h2>
-              <p className="pillar-desc">
-                Rewrites weak bullet points using the proven Google XYZ formula without inventing
-                false metrics, company projects, or unperformed tasks.
-              </p>
-            </div>
+            {currentView === 'results' &&
+              (analysisResult ? (
+                <ResultsPage
+                  result={analysisResult}
+                  onReanalyze={() => {
+                    setCurrentView('analyzer');
+                    window.location.hash = '#analyzer';
+                  }}
+                />
+              ) : (
+                <EmptyState
+                  onNavigate={handleNavigate}
+                  onLoadSample={handleLoadSample}
+                />
+              ))}
 
-            <div className="glass-card pillar-card">
-              <div className="pillar-icon">🔒</div>
-              <h2 className="pillar-title">DPDP 2023 Compliant</h2>
-              <p className="pillar-desc">
-                Ephemeral in-memory PDF parsing with zero persistent storage. Your sensitive career
-                data is never sold or used to train third-party AI models.
-              </p>
-            </div>
-          </section>
-
-          {/* Transparent Anti-Snake-Oil Commitment */}
-          <aside className="disclaimer-banner" role="note">
-            <span className="disclaimer-icon">💡</span>
-            <p className="disclaimer-text">
-              <strong>Honesty Commitment:</strong> JobMate AI does not sell fake &quot;95% ATS
-              selection score&quot; promises. We provide truthful lexical alignment, keyword
-              evidence, and structured achievement rephrasing for human technical recruiters.
-            </p>
-          </aside>
-        </div>
+            {currentView === 'privacy' && (
+              <PrivacyPage onNavigate={handleNavigate} />
+            )}
+          </>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="app-footer">
-        <div className="container">
-          <p>JobMate AI © 2026 • Phase 0 Architecture Completed • Ready for Phase 1 Engine</p>
-        </div>
-      </footer>
+      {/* Universal Footer */}
+      <Footer onNavigate={handleNavigate} />
     </div>
   );
 };
